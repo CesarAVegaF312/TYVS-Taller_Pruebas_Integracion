@@ -35,11 +35,10 @@ main/edu/unisabana/tyvs/registry/
    ├─ cli/                      # (si algún día hay consola)
    └─ messaging/                # (si algún día hay colas)
 test/edu/unisabana/tyvs/registry/
- ├─ domain/
- │   ├─ model/                 # Person, Gender, RegisterResult
- │   └─ service/               # (vacío) o mueve Registry a application
-
-
+ ├─ application/
+ │   ├─ usecase/               # RegistryTest, RegistryWithMockTest
+ └─ delivery/                    # capa de exposición (inbound adapters)
+     ├─ rest/                     # RegistryControllerIT
 ---
 
 ## 2. ⚙️ Configuración en Maven
@@ -47,31 +46,61 @@ test/edu/unisabana/tyvs/registry/
 Agregamos dependencias y plugins clave al `pom.xml`.
 
 ```xml
-<dependencies>
-  <!-- JUnit 4 -->
-  <dependency>
-    <groupId>junit</groupId>
-    <artifactId>junit</artifactId>
-    <version>4.13.2</version>
-    <scope>test</scope>
-  </dependency>
+  <dependencies>
+    <!-- JUnit 4 -->
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <version>5.10.2</version>
+      <scope>test</scope>
+    </dependency>
 
-  <!-- Mockito para crear dobles de prueba -->
-  <dependency>
-    <groupId>org.mockito</groupId>
-    <artifactId>mockito-core</artifactId>
-    <version>5.12.0</version>
-    <scope>test</scope>
-  </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.2</version>
+      <scope>test</scope>
+    </dependency>
 
-  <!-- H2: base de datos en memoria para pruebas de integración -->
-  <dependency>
-    <groupId>com.h2database</groupId>
-    <artifactId>h2</artifactId>
-    <version>2.2.224</version>
-    <scope>test</scope>
-  </dependency>
-</dependencies>
+    <!-- Mockito para crear dobles de prueba -->
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>5.12.0</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Web + JSON -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- Tests Spring + JUnit 4/5 (por defecto trae 5; puedes seguir usando 4 si prefieres) -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+      <exclusions>
+        <!-- si te quedas con JUnit 4, excluye vintage o ajusta según tu setup -->
+      </exclusions>
+    </dependency>
+
+    <!-- H2: base de datos en memoria para pruebas de integración -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>2.2.224</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.34</version>
+    </dependency>
+
+  </dependencies>
 ```
 
 🔎 **Explicación:**  
@@ -289,7 +318,7 @@ public class RegistryWithMockTest {
 
 ## 5. 🌐 Prueba de Sistema (caja negra vía HTTP)
 
-Archivo: `src/test/java/.../delivery/rest/RegistryControllerIT.java`
+Archivo: `src/test/java/edu/unisabana/tyvs/registry/delivery/rest/RegistryControllerIT.java`
 
 ```java
 // src/test/java/edu/unisabana/tyvs/registry/delivery/rest/RegistryControllerIT.java
@@ -324,7 +353,7 @@ public class RegistryControllerIT {
 ```
 
 🔎 **Explicación:**  
-- **System under test:** un servidor mínimo que expone `/register`.  
+- **System under test:** un servidor mínimo que expone `/register`.
 - El test **no sabe nada de clases internas** (`Registry`, `Person`) → solo valida que si hago un `POST`, la respuesta es correcta.  
 - Esto es lo más parecido a cómo un **cliente real** interactuaría con el sistema.  
 
@@ -357,5 +386,3 @@ target/site/jacoco/index.html
 4. **Pruebas de sistema = caja negra:** siempre probar por interfaces externas (API, CLI, UI).  
 
 ---
-
-📌 Con esto ya tienes una guía más profunda para **pruebas de integración y sistema** en tu proyecto Maven.
