@@ -1,6 +1,6 @@
 # Taller de Pruebas de Integración y Sistema
 
-Este taller tiene como objetivo aprender a diseñar, implementar y ejecutar **pruebas de integración** y **pruebas de sistema** en un proyecto Maven.  
+Este taller tiene como objetivo aprender a diseñar, implementar y ejecutar **pruebas de integración** y **pruebas de sistema** en un proyecto Maven.
 En el flujo de desarrollo de software, a diferencia de las **pruebas unitarias** (que verifican clases de forma aislada), las pruebas de integración y sistema permiten verificar cómo los **componentes interactúan entre sí** y cómo funciona el sistema **como un todo**.
 
 ---
@@ -28,13 +28,13 @@ Comprender, diseñar e implementar **pruebas de integración y de sistema** sobr
 
 ## Conceptos clave
 
-- **Pruebas de integración**  
-  Verifican que los módulos del sistema se comuniquen y trabajen juntos correctamente.  
-  Ejemplo: la clase `Registry` (que valida votantes) + `RegistryRepository` (que guarda en la base de datos).
+- **Pruebas de integración**
+Verifican que los módulos del sistema se comuniquen y trabajen juntos correctamente.
+Ejemplo: la clase `Registry` (que valida votantes) + `RegistryRepository` (que guarda en la base de datos).
 
-- **Pruebas de sistema**  
-  Verifican el comportamiento del software como caja negra, a través de su interfaz pública (ej: endpoints HTTP, CLI).  
-  Ejemplo: hacer un `POST /register` y validar la respuesta sin importar la implementación interna.
+- **Pruebas de sistema**
+Verifican el comportamiento del software como caja negra, a través de su interfaz pública (ej: endpoints HTTP, CLI).
+Ejemplo: hacer un `POST /register` y validar la respuesta sin importar la implementación interna.
 
 ## COMOCE EL TALLER
 
@@ -131,12 +131,12 @@ Agregamos dependencias y plugins clave al `pom.xml`.
   </dependencies>
 ```
 
-**Explicación:**  
+**Explicación:**
 
 - `junit-jupiter`: corresponde al motor de **JUnit 5**, que incluye las anotaciones principales como `@Test`, `@BeforeEach`, `@AfterEach` y la clase `Assertions`.
 En este proyecto se utiliza **JUnit 4** como base, pero también se integra **JUnit 5** (Jupiter) para la ejecución de pruebas más especializadas o con nuevas características del framework, como el soporte para pruebas parametrizadas o mayor compatibilidad con **Spring Boot Test**.
-- `mockito-core`: simula dependencias externas, ideal cuando no quieres depender de IO real.  
-- `h2`: BD embebida que se crea en memoria para cada prueba → rápida, aislada, no requiere instalación.  
+- `mockito-core`: simula dependencias externas, ideal cuando no quieres depender de IO real.
+- `h2`: BD embebida que se crea en memoria para cada prueba → rápida, aislada, no requiere instalación.
 
 ---
 
@@ -146,7 +146,7 @@ En este proyecto se utiliza **JUnit 4** como base, pero también se integra **JU
 
 ### Prueba de Integración con BD H2
 
-Las pruebas de integración evalúan la **interacción entre múltiples módulos o capas**.  
+Las pruebas de integración evalúan la **interacción entre múltiples módulos o capas**.
 En este taller, se probará la relación entre el **caso de uso `Registry`** y el **adaptador `RegistryRepository`** (que usa una BD en memoria H2).
 
 #### Ejemplo Base: `RegistryTest`
@@ -251,14 +251,14 @@ public class RegistryTest {
 #### Explicación paso a paso
 
 1. **@BeforeEach → setup()**
-   - Configura una BD H2 en memoria (`jdbc:h2:mem:regdb;DB_CLOSE_DELAY=-1`).  
-   - Llama a `repo.initSchema()` para crear la tabla de votantes.  
+   - Configura una BD H2 en memoria (`jdbc:h2:mem:regdb;DB_CLOSE_DELAY=-1`).
+   - Llama a `repo.initSchema()` para crear la tabla de votantes.
    - Crea un objeto `Registry` que usará ese `repo` real.
 
 2. **Test**
-   - Inserta a `p1` → el método `registry.registerVoter(p1)` ejecuta un `INSERT INTO voters(...)`.  
-   - Luego se hace una validación directa con `repo.existsById(100)` → consulta a la tabla H2 para confirmar que quedó.  
-   - Inserta a `p2` con mismo id → antes de intentar guardar, se hace un `SELECT` en la BD y detecta duplicado, devolviendo `DUPLICATED`.  
+   - Inserta a `p1` → el método `registry.registerVoter(p1)` ejecuta un `INSERT INTO voters(...)`.
+   - Luego se hace una validación directa con `repo.existsById(100)` → consulta a la tabla H2 para confirmar que quedó.
+   - Inserta a `p2` con mismo id → antes de intentar guardar, se hace un `SELECT` en la BD y detecta duplicado, devolviendo `DUPLICATED`.
 
 👉 Así queda más claro: en la **primera llamada** se hace el insert, y en la **segunda llamada** se valida el duplicado consultando la base de datos.
 
@@ -367,17 +367,17 @@ public class RegistryWithMockTest {
 
 #### Explicación del Test con Mockito
 
-- `mock(RegistryRepositoryPort.class)`: crea un doble de prueba.  
-- `when(repo.existsById(7)).thenReturn(true)`: simula que ya existe un votante con id 7.  
-- `assertEquals(...)`: validamos que el `Registry` responde `DUPLICATED`.  
-- `verify(...)`: asegura que nunca se llamó a `repo.save(...)` → es decir, no intentó grabar un duplicado.  
+- `mock(RegistryRepositoryPort.class)`: crea un doble de prueba.
+- `when(repo.existsById(7)).thenReturn(true)`: simula que ya existe un votante con id 7.
+- `assertEquals(...)`: validamos que el `Registry` responde `DUPLICATED`.
+- `verify(...)`: asegura que nunca se llamó a `repo.save(...)` → es decir, no intentó grabar un duplicado.
 
 👉 Aquí no usamos BD real, sino un **mock** para aislar la prueba a la interacción con el repositorio.
 
 #### Actividades con Mockito
 
-1. Implementa un mock del repositorio que devuelva `false` en `existsById()` y verifique que `save()` se invoca.  
-2. Implementa un mock que simule una excepción SQL y verifica que tu caso de uso la maneje correctamente.  
+1. Implementa un mock del repositorio que devuelva `false` en `existsById()` y verifique que `save()` se invoca.
+2. Implementa un mock que simule una excepción SQL y verifica que tu caso de uso la maneje correctamente.
 3. Usa `verify(repo).save(...)` para confirmar la interacción esperada.
 
 #### 💡 Reto adicional con Mocks
@@ -450,13 +450,13 @@ public class RegistryControllerIT {
 #### Explicación del Test de sistemas
 
 - **System under test:** un servidor mínimo que expone `/register`.
-- El test **no sabe nada de clases internas** (`Registry`, `Person`) → solo valida que si hago un `POST`, la respuesta es correcta.  
-- Esto es lo más parecido a cómo un **cliente real** interactuaría con el sistema.  
+- El test **no sabe nada de clases internas** (`Registry`, `Person`) → solo valida que si hago un `POST`, la respuesta es correcta.
+- Esto es lo más parecido a cómo un **cliente real** interactuaría con el sistema.
 
 #### Actividades con Sistemas
 
-1. Realiza pruebas con distintos cuerpos JSON que produzcan los estados `VALID`, `DUPLICATED`, `UNDERAGE`, `DEAD`.  
-2. Usa Postman o curl para verificar los endpoints `/register` y documenta tus observaciones.  
+1. Realiza pruebas con distintos cuerpos JSON que produzcan los estados `VALID`, `DUPLICATED`, `UNDERAGE`, `DEAD`.
+2. Usa Postman o curl para verificar los endpoints `/register` y documenta tus observaciones.
 3. Implementa una prueba negativa (JSON incompleto o tipo incorrecto).
 
 #### 💡 Reto adicional con Sistemas
@@ -499,10 +499,10 @@ Puedes consultarla en el siguiente enlace: [**Taller de Integración Continua en
 
 ## Buenas prácticas
 
-1. **Separación clara:** `*Test.java` → unitarias, `*IT.java` → integración/sistema.  
-2. **Datos aislados:** usar BD en memoria (H2) evita que las pruebas dependan de un entorno externo.  
-3. **Mocks en los límites:** Mockito es útil para pruebas rápidas cuando no quieres depender de IO real.  
-4. **Pruebas de sistema = caja negra:** siempre probar por interfaces externas (API, CLI, UI).  
+1. **Separación clara:** `*Test.java` → unitarias, `*IT.java` → integración/sistema.
+2. **Datos aislados:** usar BD en memoria (H2) evita que las pruebas dependan de un entorno externo.
+3. **Mocks en los límites:** Mockito es útil para pruebas rápidas cuando no quieres depender de IO real.
+4. **Pruebas de sistema = caja negra:** siempre probar por interfaces externas (API, CLI, UI).
 
 ---
 
@@ -510,69 +510,69 @@ Puedes consultarla en el siguiente enlace: [**Taller de Integración Continua en
 
 ### 1) Repositorio
 
-- **Repositorio Git** con el proyecto completo y **URL pública o acceso por invitación**.  
-- Archivo **`.gitignore`** (excluir `target/`, `.idea/`, `.vscode/`, etc.).  
-- Archivo **`integrantes.txt`** o sección en el README con nombres y correos institucionales.  
-- **Rama principal ejecutable:** debe compilar y correr con `mvn clean verify` sin configuraciones manuales adicionales.  
+- **Repositorio Git** con el proyecto completo y **URL pública o acceso por invitación**.
+- Archivo **`.gitignore`** (excluir `target/`, `.idea/`, `.vscode/`, etc.).
+- Archivo **`integrantes.txt`** o sección en el README con nombres y correos institucionales.
+- **Rama principal ejecutable:** debe compilar y correr con `mvn clean verify` sin configuraciones manuales adicionales.
 
 ### 2) Documentación en Wiki (obligatoria)
 
-> Toda la documentación del taller se entrega en el **Wiki del repositorio**.  
+> Toda la documentación del taller se entrega en el **Wiki del repositorio**.
 > No se requiere PDF; el Wiki es la entrega oficial.
 
 Estructura mínima sugerida del Wiki:
 
-- **Inicio:** descripción breve del dominio, propósito del sistema y miembros del equipo.  
-- **Tipos de pruebas:** diferencia clara entre unitarias, integración y sistema (tabla o esquema).  
-- **Arquitectura limpia:** diagrama de capas usadas (`domain`, `application`, `infrastructure`, `delivery`).  
-- **Pruebas de Integración:** explicación de cómo se conectan las capas y la base de datos (H2 o mock).  
-- **Pruebas con Mockito:** ejemplos de uso de `when(...)`, `verify(...)`, `never(...)`.  
-- **Pruebas de Sistema (HTTP):** escenarios y evidencias de ejecución (capturas o respuestas JSON).  
-- **Resultados:** capturas del **reporte JaCoCo** y breve análisis de cobertura.  
-- **Conclusiones técnicas:** aprendizajes y limitaciones detectadas.  
+- **Inicio:** descripción breve del dominio, propósito del sistema y miembros del equipo.
+- **Tipos de pruebas:** diferencia clara entre unitarias, integración y sistema (tabla o esquema).
+- **Arquitectura limpia:** diagrama de capas usadas (`domain`, `application`, `infrastructure`, `delivery`).
+- **Pruebas de Integración:** explicación de cómo se conectan las capas y la base de datos (H2 o mock).
+- **Pruebas con Mockito:** ejemplos de uso de `when(...)`, `verify(...)`, `never(...)`.
+- **Pruebas de Sistema (HTTP):** escenarios y evidencias de ejecución (capturas o respuestas JSON).
+- **Resultados:** capturas del **reporte JaCoCo** y breve análisis de cobertura.
+- **Conclusiones técnicas:** aprendizajes y limitaciones detectadas.
 
 Incluye **enlaces al código** (`Registry.java`, `RegistryController.java`, tests) dentro de cada sección del Wiki.
 
 ### 3) Pruebas de Integración
 
-- Al menos **3 pruebas con base de datos H2** cubriendo interacciones reales entre `Registry` y `RegistryRepository`.  
+- Al menos **3 pruebas con base de datos H2** cubriendo interacciones reales entre `Registry` y `RegistryRepository`.
 - Casos mínimos:
-  - Persona válida → `VALID`  
-  - Persona duplicada → `DUPLICATED`  
-  - Persona menor de edad → `UNDERAGE`  
-  - Persona fallecida → `DEAD`  
-- Deben ejecutarse sin mocks, verificando que los datos se persisten realmente.  
+  - Persona válida → `VALID`
+  - Persona duplicada → `DUPLICATED`
+  - Persona menor de edad → `UNDERAGE`
+  - Persona fallecida → `DEAD`
+- Deben ejecutarse sin mocks, verificando que los datos se persisten realmente.
 - Usa formato **AAA (Arrange – Act – Assert)** y nombres descriptivos (`shouldReturnDuplicatedWhenIdExists()`).
 
 ### 4) Pruebas de Integración con Mocks
 
-- Al menos **2 pruebas con Mockito**, simulando el repositorio o adaptador externo.  
+- Al menos **2 pruebas con Mockito**, simulando el repositorio o adaptador externo.
 - Verificar interacciones con:
   - `verify(repo).save(...)`
   - `verify(repo, never()).save(...)`
-- Incluir un caso de excepción controlada (`when(repo.save(...)).thenThrow(...)`) y manejo correcto del error.  
+- Incluir un caso de excepción controlada (`when(repo.save(...)).thenThrow(...)`) y manejo correcto del error.
 - Comenta brevemente el propósito de cada test y la lógica simulada.
 
 ### 5) Pruebas de Sistema (HTTP)
 
 - Al menos **2 pruebas end-to-end** usando:
-  - `TestRestTemplate`, `MockMvc` o cliente HTTP equivalente.  
-- Validar los endpoints reales (`/register`) devolviendo respuestas HTTP correctas (`200`, `400`, `500`).  
+  - `TestRestTemplate`, `MockMvc` o cliente HTTP equivalente.
+- Validar los endpoints reales (`/register`) devolviendo respuestas HTTP correctas (`200`, `400`, `500`).
 - Casos mínimos:
-  - Registro exitoso (status 200, body “VALID”).  
-  - Entrada inválida o inconsistente (status 400 / 422).  
-- Adjuntar en el Wiki **capturas del resultado** (Postman o terminal).  
+  - Registro exitoso (status 200, body “VALID”).
+  - Entrada inválida o inconsistente (status 400 / 422).
+- Adjuntar en el Wiki **capturas del resultado** (Postman o terminal).
 
 ### 6) Cobertura (JaCoCo)
 
-- Reporte **JaCoCo** generado en `target/site/jacoco/index.html`.  
-- **Cobertura global ≥ 80%**, y al menos **70% en el paquete `application` y `delivery`**.  
-- Adjuntar capturas en el Wiki e indicar **qué clases no se pudieron cubrir y por qué** (p. ej. excepciones controladas, código legado, etc.).  
+- Reporte **JaCoCo** generado en `target/site/jacoco/index.html`.
+- **Cobertura global ≥ 80%**, y al menos **70% en el paquete `application` y `delivery`**.
+- Adjuntar capturas en el Wiki e indicar **qué clases no se pudieron cubrir y por qué** (p. ej. excepciones controladas, código legado, etc.).
 
 ### 7) Matriz de pruebas de integración
 
-- Tabla con los **casos de integración** probados:  
-  - **Caso**, **Entrada**, **Resultado esperado**, **Tipo de prueba (H2/Mock/HTTP)**, **Test que lo valida**.  
+- Tabla con los **casos de integración** probados:
+  - **Caso**, **Entrada**, **Resultado esperado**, **Tipo de prueba (H2/Mock/HTTP)**, **Test que lo valida**.
 
 **Ejemplo:**
 
@@ -583,27 +583,27 @@ Incluye **enlaces al código** (`Registry.java`, `RegistryController.java`, test
 
 ### 8) Gestión de defectos
 
-- Archivo **`defectos.md`** con al menos **1 defecto real o simulado** detectado por pruebas de integración o sistema.  
-  - **Caso probado**  
-  - **Resultado esperado vs. obtenido**  
-  - **Causa probable**  
-  - **Estado:** Abierto / Cerrado  
-  - **Evidencia:** fragmento de log o screenshot  
+- Archivo **`defectos.md`** con al menos **1 defecto real o simulado** detectado por pruebas de integración o sistema.
+  - **Caso probado**
+  - **Resultado esperado vs. obtenido**
+  - **Causa probable**
+  - **Estado:** Abierto / Cerrado
+  - **Evidencia:** fragmento de log o screenshot
 
 ### 9) Calidad del código
 
-- Clases sin duplicación ni dependencias cíclicas.  
-- Constantes reutilizables (`MIN_AGE`, `MAX_AGE`, etc.).  
-- Nombrado claro y uso correcto de paquetes.  
-- Control de errores con excepciones específicas y manejo en el controlador HTTP.  
-- Eliminación de código comentado o redundante.  
+- Clases sin duplicación ni dependencias cíclicas.
+- Constantes reutilizables (`MIN_AGE`, `MAX_AGE`, etc.).
+- Nombrado claro y uso correcto de paquetes.
+- Control de errores con excepciones específicas y manejo en el controlador HTTP.
+- Eliminación de código comentado o redundante.
 
 ### 10) Reflexión final (en el Wiki)
 
-- ¿Qué capas fueron más difíciles de probar y por qué?  
-- ¿Qué beneficios observas en usar mocks frente a H2 o base real?  
-- ¿Cómo mejorarías el diseño de `RegistryController` o `RegistryRepository` para facilitar las pruebas automáticas?  
-- ¿Qué aprendiste sobre **integración continua (CI)** al ejecutar tus pruebas con Maven y JaCoCo?  
+- ¿Qué capas fueron más difíciles de probar y por qué?
+- ¿Qué beneficios observas en usar mocks frente a H2 o base real?
+- ¿Cómo mejorarías el diseño de `RegistryController` o `RegistryRepository` para facilitar las pruebas automáticas?
+- ¿Qué aprendiste sobre **integración continua (CI)** al ejecutar tus pruebas con Maven y JaCoCo?
 
 ### 11) Rúbrica – Taller de Pruebas de Integración y Sistema
 
@@ -633,18 +633,18 @@ Incluye **enlaces al código** (`Registry.java`, `RegistryController.java`, test
 
 En este taller aplicamos distintas estrategias de **pruebas de integración y sistema** que permiten validar el correcto funcionamiento del software **más allá de las clases individuales**, garantizando la comunicación entre capas, la persistencia de datos y el comportamiento de los endpoints.
 
-A través del caso `Registry`, se aplican los principios de **Testing y Validación de Software** dentro de una **arquitectura limpia**, integrando los componentes de dominio, aplicación, infraestructura y capa de entrega (REST).  
+A través del caso `Registry`, se aplican los principios de **Testing y Validación de Software** dentro de una **arquitectura limpia**, integrando los componentes de dominio, aplicación, infraestructura y capa de entrega (REST).
 El propósito es que los estudiantes comprendan cómo **verificar la interacción entre módulos reales o simulados**, usando herramientas como **H2**, **Mockito** y **Spring Boot Test**, asegurando un flujo confiable de extremo a extremo.
 
 ---
 
 ## 🧩 Cómo usar esta guía para tu proyecto
 
-1. **Analiza la arquitectura base:** revisa cómo se comunican las capas (`domain`, `application`, `infrastructure`, `delivery`) y cómo se aislan las dependencias.  
-2. **Ejecuta las pruebas de integración reales (con H2):** valida la persistencia y reglas del dominio con datos reales.  
-3. **Implementa pruebas con mocks (Mockito):** simula interacciones con repositorios o servicios externos para probar comportamientos aislados.  
-4. **Agrega pruebas de sistema (HTTP):** verifica los endpoints del controlador (`/register`) con `MockMvc` o `TestRestTemplate`, asegurando respuestas y códigos de estado correctos.  
-5. **Usa el patrón AAA (Arrange – Act – Assert)** en todas las pruebas para mantener claridad, estructura y trazabilidad.  
+1. **Analiza la arquitectura base:** revisa cómo se comunican las capas (`domain`, `application`, `infrastructure`, `delivery`) y cómo se aislan las dependencias.
+2. **Ejecuta las pruebas de integración reales (con H2):** valida la persistencia y reglas del dominio con datos reales.
+3. **Implementa pruebas con mocks (Mockito):** simula interacciones con repositorios o servicios externos para probar comportamientos aislados.
+4. **Agrega pruebas de sistema (HTTP):** verifica los endpoints del controlador (`/register`) con `MockMvc` o `TestRestTemplate`, asegurando respuestas y códigos de estado correctos.
+5. **Usa el patrón AAA (Arrange – Act – Assert)** en todas las pruebas para mantener claridad, estructura y trazabilidad.
 6. **Documenta el proceso en el Wiki del repositorio**, incluyendo:
    - Descripción del flujo de integración entre capas.
    - Ejemplos de pruebas de integración y mocks.
@@ -654,7 +654,7 @@ El propósito es que los estudiantes comprendan cómo **verificar la interacció
 
 ---
 
-> 🎯 **Resultado esperado:**  
+> 🎯 **Resultado esperado:**
 > Al finalizar este taller, cada estudiante o equipo contará con un proyecto con **pruebas de integración y sistema completas**, validando correctamente la interacción entre componentes, con una **cobertura mínima del 80%** y documentación clara que refleje la aplicación práctica de los conceptos de **Testing de Integración, Mockito, Arquitectura Limpia y Pruebas de Sistema (HTTP)**.
 
 ---
@@ -663,29 +663,29 @@ El propósito es que los estudiantes comprendan cómo **verificar la interacció
 
 ### Pruebas de Integración
 
-- **Qué son:** validan que los diferentes **módulos o capas del sistema funcionen correctamente al interactuar entre sí**.  
-- **Para qué sirven:** permiten detectar fallos en la comunicación entre componentes (por ejemplo, entre el servicio `Registry` y el repositorio `RegistryRepository`), asegurando que la lógica de negocio se mantenga consistente incluso al persistir o recuperar datos.  
+- **Qué son:** validan que los diferentes **módulos o capas del sistema funcionen correctamente al interactuar entre sí**.
+- **Para qué sirven:** permiten detectar fallos en la comunicación entre componentes (por ejemplo, entre el servicio `Registry` y el repositorio `RegistryRepository`), asegurando que la lógica de negocio se mantenga consistente incluso al persistir o recuperar datos.
 - **Ejemplo típico:** usar una base de datos **H2** en memoria para verificar que las inserciones, consultas y restricciones se comportan como se espera.
 
 ### Pruebas con Mocks (Mockito)
 
-- **Qué son:** pruebas que **simulan dependencias externas o colaboraciones** (por ejemplo, una base de datos o API externa) para validar la lógica de negocio sin ejecutar código real de infraestructura.  
-- **Para qué sirven:** permiten aislar el comportamiento de la unidad probada, detectar llamadas inesperadas y asegurar que la integración se produzca bajo las condiciones correctas.  
+- **Qué son:** pruebas que **simulan dependencias externas o colaboraciones** (por ejemplo, una base de datos o API externa) para validar la lógica de negocio sin ejecutar código real de infraestructura.
+- **Para qué sirven:** permiten aislar el comportamiento de la unidad probada, detectar llamadas inesperadas y asegurar que la integración se produzca bajo las condiciones correctas.
 - **Ejemplo típico:** usar `when(...).thenReturn(...)` y `verify(...)` para comprobar que se invoca el método `save()` solo cuando corresponde.
 
 ### Pruebas de Sistema (HTTP)
 
-- **Qué son:** verifican el funcionamiento completo del sistema **desde la capa más externa (REST)**, simulando solicitudes reales de usuario a través de endpoints (`POST /register`).  
-- **Para qué sirven:** prueban el flujo completo: request → capa de aplicación → persistencia → respuesta, validando códigos HTTP (`200`, `400`, `500`) y formatos JSON.  
+- **Qué son:** verifican el funcionamiento completo del sistema **desde la capa más externa (REST)**, simulando solicitudes reales de usuario a través de endpoints (`POST /register`).
+- **Para qué sirven:** prueban el flujo completo: request → capa de aplicación → persistencia → respuesta, validando códigos HTTP (`200`, `400`, `500`) y formatos JSON.
 - **Ejemplo típico:** usar `MockMvc` o `TestRestTemplate` para enviar un JSON con los datos de un ciudadano y recibir un resultado como texto (`VALID`, `DUPLICATED`, etc.).
 
 ### Arquitectura Limpia en las pruebas
 
-- **Qué es:** una forma de organizar el sistema en capas separadas por responsabilidad:  
-  - `domain`: contiene las reglas del negocio.  
-  - `application`: coordina los casos de uso.  
-  - `infrastructure`: maneja persistencia y comunicación externa.  
-  - `delivery`: expone el sistema vía REST o interfaz.  
+- **Qué es:** una forma de organizar el sistema en capas separadas por responsabilidad:
+  - `domain`: contiene las reglas del negocio.
+  - `application`: coordina los casos de uso.
+  - `infrastructure`: maneja persistencia y comunicación externa.
+  - `delivery`: expone el sistema vía REST o interfaz.
 - **Para qué sirve:** facilita las pruebas independientes por capa, promueve el desacoplamiento y permite reemplazar implementaciones (por ejemplo, un repositorio real por uno simulado).
 
 ---
@@ -694,10 +694,10 @@ El propósito es que los estudiantes comprendan cómo **verificar la interacció
 
 En conjunto, estas prácticas permiten:
 
-- Validar la interacción entre componentes (**pruebas de integración**).  
-- Simular dependencias de forma controlada (**mocks con Mockito**).  
-- Evaluar el sistema de extremo a extremo (**pruebas HTTP o de sistema**).  
-- Mantener código modular y verificable (**arquitectura limpia + AAA**).  
+- Validar la interacción entre componentes (**pruebas de integración**).
+- Simular dependencias de forma controlada (**mocks con Mockito**).
+- Evaluar el sistema de extremo a extremo (**pruebas HTTP o de sistema**).
+- Mantener código modular y verificable (**arquitectura limpia + AAA**).
 
 Con esto se logra **mayor confianza en los despliegues**, **mejor trazabilidad del comportamiento del sistema** y **evidencia sólida del cumplimiento de los requisitos funcionales y no funcionales**.
 
@@ -705,11 +705,11 @@ Con esto se logra **mayor confianza en los despliegues**, **mejor trazabilidad d
 
 ## Recursos recomendados
 
-- *Clean Architecture* – Robert C. Martin  
-- *Growing Object-Oriented Software, Guided by Tests* – Steve Freeman & Nat Pryce  
-- Documentación oficial de [Mockito](https://site.mockito.org/)  
-- [Spring Boot Test Reference](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.testing)  
-- [JaCoCo Coverage Tool](https://www.jacoco.org/jacoco/)  
+- *Clean Architecture* – Robert C. Martin
+- *Growing Object-Oriented Software, Guided by Tests* – Steve Freeman & Nat Pryce
+- Documentación oficial de [Mockito](https://site.mockito.org/)
+- [Spring Boot Test Reference](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.testing)
+- [JaCoCo Coverage Tool](https://www.jacoco.org/jacoco/)
 
 ---
 
