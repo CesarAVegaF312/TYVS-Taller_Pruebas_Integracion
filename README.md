@@ -13,6 +13,14 @@ Comprender, diseñar e implementar **pruebas de integración y de sistema** sobr
 
 ## 📑 Índice
 
+- [PRUEBAS DE INTEGRACIÓN BÁSICAS](#pruebas-de-integración-básicas)
+- [Prueba de Integración con BD H2](#prueba-de-integración-con-bd-h2)
+- [Pruebas de Integración con Mocks](#pruebas-de-integración-con-mocks)
+- [Prueba de Sistema caja negra](#prueba-de-sistema-caja-negra)
+- [Ejecución de las pruebas](#ejecución-de-las-pruebas)
+- [Buenas prácticas](#buenas-prácticas)
+- [Para entregar](#para-entregar-con-este-taller)
+- [Resumen del Taller](#hagamos-un-resumen)
 - [Conclusión](#conclusión)
 - [Recursos recomendados](#recursos-recomendados)
 
@@ -141,7 +149,7 @@ En este proyecto se utiliza **JUnit 4** como base, pero también se integra **JU
 Las pruebas de integración evalúan la **interacción entre múltiples módulos o capas**.  
 En este taller, se probará la relación entre el **caso de uso `Registry`** y el **adaptador `RegistryRepository`** (que usa una BD en memoria H2).
 
-### Ejemplo Base: `RegistryTest`
+#### Ejemplo Base: `RegistryTest`
 
 Crear el archivo: `edu/unisabana/tyvs/registry/application/usecase/RegistryTest.java`
 
@@ -240,7 +248,7 @@ public class RegistryTest {
 }
 ```
 
-### Explicación paso a paso
+#### Explicación paso a paso
 
 1. **@BeforeEach → setup()**
    - Configura una BD H2 en memoria (`jdbc:h2:mem:regdb;DB_CLOSE_DELAY=-1`).  
@@ -254,7 +262,7 @@ public class RegistryTest {
 
 👉 Así queda más claro: en la **primera llamada** se hace el insert, y en la **segunda llamada** se valida el duplicado consultando la base de datos.
 
-### Actividades con el uso de BD H2
+#### Actividades con el uso de BD H2
 
 1. Implementa pruebas para los siguientes casos:
    - Persona duplicada (`DUPLICATED`)
@@ -264,17 +272,17 @@ public class RegistryTest {
 2. Aplica el formato **AAA (Arrange – Act – Assert)** en cada test.
 3. Añade aserciones que verifiquen la persistencia real con H2.
 
-### Reto adicional con el uso de BD H2
+#### 💡 Reto adicional con el uso de BD H2
 
 Simula un error de conexión en H2 y observa cómo responde tu caso de uso.
 
 ---
 
-## Pruebas de Integración con Mocks (Mockito)
+### Pruebas de Integración con Mocks
 
 Cuando no se desea usar una base de datos real, podemos **simular el repositorio** con Mockito.
 
-### Ejemplo Base: `RegistryWithMockTest`
+#### Ejemplo Base: `RegistryWithMockTest`
 
 Archivo: `src/test/edu/unisabana/tyvs/registry/application/usecase/RegistryWithMockTest.java`
 
@@ -357,7 +365,7 @@ public class RegistryWithMockTest {
 
 ```
 
-### Explicación del Test con Mockito
+#### Explicación del Test con Mockito
 
 - `mock(RegistryRepositoryPort.class)`: crea un doble de prueba.  
 - `when(repo.existsById(7)).thenReturn(true)`: simula que ya existe un votante con id 7.  
@@ -366,23 +374,23 @@ public class RegistryWithMockTest {
 
 👉 Aquí no usamos BD real, sino un **mock** para aislar la prueba a la interacción con el repositorio.
 
-### Actividades con Mockito
+#### Actividades con Mockito
 
 1. Implementa un mock del repositorio que devuelva `false` en `existsById()` y verifique que `save()` se invoca.  
 2. Implementa un mock que simule una excepción SQL y verifica que tu caso de uso la maneje correctamente.  
 3. Usa `verify(repo).save(...)` para confirmar la interacción esperada.
 
-### 💡 Reto adicional con Mocks
+#### 💡 Reto adicional con Mocks
 
 Crea una versión **FakeRepository** que guarde los datos en una `HashMap` en memoria sin usar Mockito.
 
 ---
 
-## Prueba de Sistema (caja negra vía HTTP)
+### Prueba de Sistema caja negra
 
 Las pruebas de sistema validan el **comportamiento del sistema completo**, incluyendo controladores HTTP, lógica de negocio y persistencia.
 
-### Ejemplo Base: `RegistryControllerIT`
+#### Ejemplo Base: `RegistryControllerIT`
 
 Archivo: `src/test/java/edu/unisabana/tyvs/registry/delivery/rest/RegistryControllerIT.java`
 
@@ -439,25 +447,25 @@ public class RegistryControllerIT {
 }
 ```
 
-### Explicación del Test de sistemas
+#### Explicación del Test de sistemas
 
 - **System under test:** un servidor mínimo que expone `/register`.
 - El test **no sabe nada de clases internas** (`Registry`, `Person`) → solo valida que si hago un `POST`, la respuesta es correcta.  
 - Esto es lo más parecido a cómo un **cliente real** interactuaría con el sistema.  
 
-### Actividades con Sistemas
+#### Actividades con Sistemas
 
 1. Realiza pruebas con distintos cuerpos JSON que produzcan los estados `VALID`, `DUPLICATED`, `UNDERAGE`, `DEAD`.  
 2. Usa Postman o curl para verificar los endpoints `/register` y documenta tus observaciones.  
 3. Implementa una prueba negativa (JSON incompleto o tipo incorrecto).
 
-### 💡 Reto adicional con Sistemas
+#### 💡 Reto adicional con Sistemas
 
 Agrega validaciones con `@Valid` en el `PersonDTO` y prueba que el sistema devuelva errores HTTP adecuados (`400`, `409`, `422`).
 
 ---
 
-## Ejecución de las pruebas
+### Ejecución de las pruebas
 
 - Solo unitarias:
 
