@@ -487,6 +487,16 @@ target/site/jacoco/index.html
 
 ---
 
+## Automatización e integración (Opcional)
+
+- Ejecuta las pruebas de integración en cada commit con CI (GitHub Actions, Jenkins, GitLab CI).
+- Rechaza merges si `mvn verify` falla.
+
+🎓 Esta guía presenta el proceso para la creación y configuración de flujos de Integración Continua (CI) utilizando GitHub Actions.
+Puedes consultarla en el siguiente enlace: [**Taller de Integración Continua en GitHub**](https://github.com/CesarAVegaF312/DAYS-Integracion_continua/tree/main/github).
+
+---
+
 ## Buenas prácticas
 
 1. **Separación clara:** `*Test.java` → unitarias, `*IT.java` → integración/sistema.  
