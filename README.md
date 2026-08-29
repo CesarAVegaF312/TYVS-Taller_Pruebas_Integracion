@@ -790,7 +790,7 @@ Incluye **enlaces al código** (`Registry.java`, `RegistryController.java`, test
   - Persona menor de edad → `UNDERAGE`
   - Persona fallecida → `DEAD`
 - Deben ejecutarse sin mocks, verificando que los datos se persisten realmente.
-- Usa formato **AAA (Arrange – Act – Assert)** y nombres descriptivos (`shouldReturnDuplicatedWhenIdExists()`).
+- Usa formato **AAA (Arrange – Act – Assert)** y nombres descriptivos (por ejemplo `shouldReturnDuplicatedWhenIdAlreadyRegistered()`, como en `RegistryControllerIT`).
 
 ### 4) Pruebas de Integración con Mocks
 
@@ -824,10 +824,16 @@ Incluye **enlaces al código** (`Registry.java`, `RegistryController.java`, test
 
 **Ejemplo:**
 
-| Caso | Entrada | Resultado Esperado | Tipo | Test |
-|------|----------|--------------------|------|------|
-| Persona duplicada | ID=101 existente | `DUPLICATED` | H2 | `shouldReturnDuplicatedWhenExists()` |
-| Persona válida | ID=200, edad=25 | `VALID` | HTTP | `shouldRegisterValidPerson()` |
+| Caso | Entrada | Resultado esperado | Tipo | Test que lo valida |
+|------|---------|--------------------|------|--------------------|
+| Persona válida | id=100, edad=30, viva | `VALID` | H2 | `RegistryIT.shouldRegisterValidPerson()` |
+| Persona duplicada | id=100 registrado dos veces | `DUPLICATED` | H2 | `RegistryIT.shouldPersistValidVoterAndRejectDuplicates()` |
+| Duplicado sin base de datos | el mock dice que el id existe | `DUPLICATED` | Mock | `RegistryWithMockTest.shouldReturnDuplicatedWhenRepoSaysExists()` |
+| Fallo de persistencia | el puerto lanza `SQLException` | `RegistryPersistenceException` | Mock | `RegistryWithMockTest.shouldWrapPersistenceFailure()` |
+| Persona menor de edad | id único, edad=17 | `UNDERAGE` | HTTP | `RegistryControllerIT.shouldReturnUnderageWhenPersonIsMinor()` |
+| Género inválido | `gender="X"` | HTTP 400 | HTTP | `RegistryControllerIT.shouldReturnBadRequestWhenGenderIsNotValid()` |
+| Dialecto SQL divergente | `SELECT "name"` | resuelve en PostgreSQL | Testcontainers | `RegistryRepositoryPostgresIT.shouldResolveQuotedLowercaseIdentifier()` |
+| Contrato con el consumidor | pacto de `certificados` | interacciones verificadas | Pact | `RegistraduriaProviderPactIT.verificarPacto()` |
 
 ### 8) Gestión de defectos
 
