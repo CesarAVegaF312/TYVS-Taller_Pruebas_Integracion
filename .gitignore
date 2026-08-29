@@ -12,3 +12,7 @@
 hs_err_pid*
 
 registraduria/target/
+.idea/
+.vscode/
+*.iml
+target/

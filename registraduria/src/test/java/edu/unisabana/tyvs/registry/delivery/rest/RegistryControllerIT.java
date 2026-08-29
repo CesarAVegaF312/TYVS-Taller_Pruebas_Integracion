@@ -1,50 +1,108 @@
-// src/test/java/edu/unisabana/tyvs/registry/delivery/rest/RegistryControllerIT.java
 package edu.unisabana.tyvs.registry.delivery.rest;
+
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.Bean;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import edu.unisabana.tyvs.registry.application.port.out.RegistryRepositoryPort;
-
-// src/test/java/.../RegistryControllerIT.java
+/**
+ * PRUEBA DE SISTEMA (caja negra): levanta la aplicacion COMPLETA en un puerto
+ * aleatorio y la ejercita por HTTP, igual que lo haria un cliente real.
+ *
+ * Puntos de diseno que conviene notar:
+ *
+ * 1. NO define beans propios. El cableado real vive en RegistryConfig; si la
+ *    prueba lo duplicara, estaria probando su propio cableado y no el de
+ *    produccion (ademas de romper el contexto por nombres de bean repetidos).
+ *
+ * 2. Usa su PROPIA base de datos (registry.jdbc-url) para no compartir estado
+ *    con las demas pruebas. H2 con DB_CLOSE_DELAY=-1 sobrevive mientras viva la
+ *    JVM, y Surefire/Failsafe reutilizan la JVM entre clases: sin un nombre
+ *    distinto, un id insertado aqui reaparece en otra prueba.
+ *
+ * 3. RANDOM_PORT evita el puerto fijo, que haria fallar la prueba si algo mas
+ *    esta escuchando en 8080.
+ */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(properties = "registry.jdbc-url=jdbc:h2:mem:regdb_ctrl_it;DB_CLOSE_DELAY=-1")
 public class RegistryControllerIT {
-
-    @TestConfiguration
-    static class TestBeans {
-        @Bean
-        public RegistryRepositoryPort registryRepositoryPort() throws Exception {
-            String jdbc = "jdbc:h2:mem:regdb;DB_CLOSE_DELAY=-1";
-            var repo = new edu.unisabana.tyvs.registry.infrastructure.persistence.RegistryRepository(jdbc);
-            repo.initSchema();
-            return repo;
-        }
-
-        @Bean
-        public edu.unisabana.tyvs.registry.application.usecase.Registry registry(RegistryRepositoryPort port) {
-            return new edu.unisabana.tyvs.registry.application.usecase.Registry(port);
-        }
-    }
 
     @Autowired
     private TestRestTemplate rest;
 
-    @Test
-    public void shouldRegisterValidPerson() {
-        String json = "{\"name\":\"Ana\",\"id\":100,\"age\":30,\"gender\":\"FEMALE\",\"alive\":true}";
+    private ResponseEntity<String> register(String json) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        ResponseEntity<String> resp = rest.postForEntity("/register", new HttpEntity<>(json, headers), String.class);
+        return rest.postForEntity("/register", new HttpEntity<>(json, headers), String.class);
+    }
 
-        assert resp.getStatusCode() == HttpStatus.OK;
-        assert "VALID".equals(resp.getBody());
+    @Test
+    public void shouldRegisterValidPerson() {
+        // Arrange
+        String json = "{\"name\":\"Ana\",\"id\":100,\"age\":30,\"gender\":\"FEMALE\",\"alive\":true}";
+
+        // Act
+        ResponseEntity<String> resp = register(json);
+
+        // Assert: assertEquals, NO la palabra clave assert de Java.
+        // 'assert' solo se evalua con -ea; el Test Runner de VS Code no lo activa
+        // y la prueba pasaria SIEMPRE, incluso con la respuesta equivocada.
+        assertEquals(HttpStatus.OK, resp.getStatusCode());
+        assertEquals("VALID", resp.getBody());
+    }
+
+    @Test
+    public void shouldReturnDuplicatedWhenIdAlreadyRegistered() {
+        // Arrange: el primer registro deja el id 101 ocupado
+        String json = "{\"name\":\"Luis\",\"id\":101,\"age\":40,\"gender\":\"MALE\",\"alive\":true}";
+        assertEquals("VALID", register(json).getBody());
+
+        // Act: el mismo id, otra persona
+        ResponseEntity<String> resp = register(
+                "{\"name\":\"Luisa\",\"id\":101,\"age\":35,\"gender\":\"FEMALE\",\"alive\":true}");
+
+        // Assert
+        assertEquals(HttpStatus.OK, resp.getStatusCode());
+        assertEquals("DUPLICATED", resp.getBody());
+    }
+
+    @Test
+    public void shouldReturnUnderageWhenPersonIsMinor() {
+        ResponseEntity<String> resp = register(
+                "{\"name\":\"Sara\",\"id\":102,\"age\":17,\"gender\":\"FEMALE\",\"alive\":true}");
+
+        assertEquals(HttpStatus.OK, resp.getStatusCode());
+        assertEquals("UNDERAGE", resp.getBody());
+    }
+
+    @Test
+    public void shouldReturnDeadWhenPersonIsNotAlive() {
+        ResponseEntity<String> resp = register(
+                "{\"name\":\"Pedro\",\"id\":103,\"age\":50,\"gender\":\"MALE\",\"alive\":false}");
+
+        assertEquals(HttpStatus.OK, resp.getStatusCode());
+        assertEquals("DEAD", resp.getBody());
+    }
+
+    @Test
+    public void shouldReturnBadRequestWhenGenderIsNotValid() {
+        // 'X' no es un valor del enum Gender.
+        // Sin manejo de error esto seria un 500; el @RestControllerAdvice lo
+        // convierte en el 400 que corresponde a una entrada invalida del cliente.
+        ResponseEntity<String> resp = register(
+                "{\"name\":\"Eva\",\"id\":104,\"age\":30,\"gender\":\"X\",\"alive\":true}");
+
+        assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
     }
 }

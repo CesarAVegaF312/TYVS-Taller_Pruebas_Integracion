@@ -72,4 +72,100 @@ public class RegistryWithMockTest {
         assertEquals(RegisterResult.DUPLICATED, result);
         verify(repo, never()).save(anyInt(), anyString(), anyInt(), anyBoolean());
     }
+
+    /**
+     * Caso de prueba: persona valida que si se persiste.
+     *
+     * <p><b>Given</b> el repositorio dice que el ID no existe;
+     * <b>When</b> se registra la persona;
+     * <b>Then</b> el resultado es {@link RegisterResult#VALID} y se invoca
+     * {@code save(...)} exactamente una vez con esos datos.</p>
+     *
+     * <p>Note la diferencia con la aserción de estado: aqui no verificamos que
+     * el dato quedo guardado (no hay base de datos), sino que el caso de uso
+     * <i>colaboro</i> correctamente con su puerto. Eso es una aserción de
+     * comportamiento, y es lo unico que un mock puede darnos.</p>
+     */
+    @Test
+    public void shouldSaveWhenPersonIsValid() throws Exception {
+        // Arrange
+        when(repo.existsById(8)).thenReturn(false);
+        Person p = new Person("Luis", 8, 30, Gender.MALE, true);
+
+        // Act
+        RegisterResult result = registry.registerVoter(p);
+
+        // Assert
+        assertEquals(RegisterResult.VALID, result);
+        verify(repo, times(1)).save(8, "Luis", 30, true);
+    }
+
+    /**
+     * Caso de prueba: fallo de infraestructura.
+     *
+     * <p><b>Given</b> el repositorio lanza una {@link java.sql.SQLException};
+     * <b>When</b> se intenta registrar; <b>Then</b> el caso de uso la traduce a
+     * {@link RegistryPersistenceException} en vez de dejarla escapar.</p>
+     *
+     * <p>Este escenario es practicamente imposible de provocar con una base de
+     * datos real: es el ejemplo canonico de para que sirve un mock.</p>
+     */
+    @Test
+    public void shouldWrapPersistenceFailure() throws Exception {
+        // Arrange: el puerto falla al consultar
+        when(repo.existsById(9)).thenThrow(new java.sql.SQLException("conexion perdida"));
+        Person p = new Person("Eva", 9, 30, Gender.FEMALE, true);
+
+        // Act + Assert
+        try {
+            registry.registerVoter(p);
+            fail("Se esperaba RegistryPersistenceException");
+        } catch (RegistryPersistenceException expected) {
+            assertEquals(java.sql.SQLException.class, expected.getCause().getClass());
+        }
+    }
+
+    /**
+     * Caso de prueba: reglas de dominio que ni siquiera tocan el repositorio.
+     *
+     * <p>Verificamos ademas que NO se consulta la base de datos: rechazar a un
+     * menor de edad no deberia costar una consulta.</p>
+     */
+    @Test
+    public void shouldRejectUnderageWithoutTouchingRepository() throws Exception {
+        // Arrange
+        Person menor = new Person("Sara", 10, 17, Gender.FEMALE, true);
+
+        // Act
+        RegisterResult result = registry.registerVoter(menor);
+
+        // Assert
+        assertEquals(RegisterResult.UNDERAGE, result);
+        verifyNoInteractions(repo);
+    }
+
+    /** Persona nula: validacion defensiva, sin tocar el repositorio. */
+    @Test
+    public void shouldReturnInvalidWhenPersonIsNull() {
+        assertEquals(RegisterResult.INVALID, registry.registerVoter(null));
+        verifyNoInteractions(repo);
+    }
+
+    /** Documento no positivo: entrada invalida. */
+    @Test
+    public void shouldReturnInvalidWhenIdIsNotPositive() {
+        Person p = new Person("Nadie", 0, 30, Gender.UNIDENTIFIED, true);
+
+        assertEquals(RegisterResult.INVALID, registry.registerVoter(p));
+        verifyNoInteractions(repo);
+    }
+
+    /** Persona no viva: se rechaza antes de evaluar la edad. */
+    @Test
+    public void shouldReturnDeadWhenPersonIsNotAlive() {
+        Person p = new Person("Pedro", 11, 50, Gender.MALE, false);
+
+        assertEquals(RegisterResult.DEAD, registry.registerVoter(p));
+        verifyNoInteractions(repo);
+    }
 }
