@@ -1,4 +1,7 @@
-# Registro de Defectos
+# Registro de Defectos — EJEMPLO RESUELTO
+
+> ℹ️ **Este archivo es un ejemplo del profesor**, no su entrega. Muestra el ciclo de vida completo de un defecto: detectado, analizado y cerrado con la prueba que lo verifica.
+> Para su taller parta de [`defectos_template.md`](defectos_template.md) y documente los defectos que **usted** encuentre.
 
 Este documento recopila los **defectos detectados durante las pruebas unitarias, de integración y de sistema** del proyecto **Registraduría**.
 Cada defecto se documenta de manera estructurada para facilitar su análisis, trazabilidad y corrección.
@@ -13,11 +16,11 @@ Cada defecto se documenta de manera estructurada para facilitar su análisis, tr
 - **Caso de prueba:** Registro de persona con edad `-1`.
 - **Entrada:**
 `Person(name="Juan", id=101, age=-1, gender=MALE, alive=true)`
-- **Resultado esperado:** `INVALID_AGE`
-- **Resultado obtenido:** `VALID`
-- **Causa probable:** La lógica de negocio no evalúa edades negativas.
+- **Resultado esperado:** `INVALID` (una edad negativa es un dato imposible, no una persona menor)
+- **Resultado obtenido:** `UNDERAGE`
+- **Causa probable:** `Registry` evalúa `age < MIN_AGE` sin distinguir entre "menor de edad" y "edad imposible". Una edad de `-1` cae en la misma rama que una de `17`.
 - **Tipo de prueba:** Unitaria (dominio puro)
-- **Estado:** Abierto
+- **Estado:** **Abierto** — es una decisión de diseño pendiente: ¿merece `INVALID_AGE` una constante propia en el enum?
 - **Prioridad:** Alta
 
 ---
@@ -32,7 +35,7 @@ Cada defecto se documenta de manera estructurada para facilitar su análisis, tr
 - **Resultado obtenido:** `VALID`
 - **Causa probable:** No se valida correctamente la condición `alive=false`.
 - **Tipo de prueba:** Unitaria (regla de negocio)
-- **Estado:** En progreso
+- **Estado:** **Resuelto** — `Registry.registerVoter` evalúa `if (!p.isAlive()) return RegisterResult.DEAD;`. Verificado por `RegistryWithMockTest.shouldReturnDeadWhenPersonIsNotAlive()`.
 - **Prioridad:** Media
 
 ---
@@ -52,14 +55,14 @@ Cada defecto se documenta de manera estructurada para facilitar su análisis, tr
   - Persona 2 → `VALID`
 - **Causa probable:** El método `existsById()` del repositorio no verifica correctamente la existencia previa del registro.
 - **Tipo de prueba:** Integración (H2 + capa de aplicación)
-- **Estado:** Abierto
+- **Estado:** **Resuelto** — `RegistryRepository.existsById` consulta la tabla antes de insertar. Verificado por `RegistryIT.shouldPersistValidVoterAndRejectDuplicates()` (H2) y `RegistryRepositoryPostgresIT.shouldPersistAndRejectDuplicate()` (PostgreSQL real).
 - **Prioridad:** Alta
 
 ---
 
 ### Defecto 04 — Fallo en simulación con mock *(Prueba de integración con Mockito)*
 
-- **Capa afectada:** Aplicación (`RegistryWithMockTest`)
+- **Capa afectada:** Aplicación (`Registry`)
 - **Caso de prueba:** Registro con `id` duplicado en un repositorio simulado.
 - **Configuración:**
 
@@ -71,7 +74,7 @@ when(repo.existsById(7)).thenReturn(true);
 - **Resultado obtenido:** `NullPointerException`
 - **Causa probable:** Dependencia `RegistryRepositoryPort` no inicializada correctamente durante el mock.
 - **Tipo de prueba:** Integración (mock)
-- **Estado:** En progreso
+- **Estado:** **Resuelto** — el escenario funciona; `RegistryWithMockTest.shouldWrapPersistenceFailure()` verifica que el fallo del puerto se traduce a `RegistryPersistenceException`.
 - **Prioridad:** Media
 
 ---
@@ -89,8 +92,8 @@ when(repo.existsById(7)).thenReturn(true);
 - **Resultado esperado:** `HTTP 400` (Bad Request)
 - **Resultado obtenido:** `HTTP 500` (Internal Server Error)
 - **Causa probable:** Falta de validación o manejo de excepción `IllegalArgumentException` en el controlador.
-- **Tipo de prueba:** Sistema (MockMvc)
-- **Estado:** Abierto
+- **Tipo de prueba:** Sistema (TestRestTemplate)
+- **Estado:** **Resuelto** — `RegistryExceptionHandler` traduce `IllegalArgumentException` a **400 Bad Request**: un género fuera del enum es error del cliente, no del servidor. Verificado por `RegistryControllerIT.shouldReturnBadRequestWhenGenderIsNotValid()`.
 - **Prioridad:** Alta
 
 ---
@@ -99,11 +102,11 @@ when(repo.existsById(7)).thenReturn(true);
 
 | ID | Caso de Prueba | Capa | Resultado Esperado | Resultado Obtenido | Tipo | Estado | Prioridad |
 |----|----------------|------|--------------------|--------------------|------|----------|------------|
-| 01 | Edad negativa | Dominio | `INVALID_AGE` | `VALID` | Unitaria | Abierto | Alta |
-| 02 | Persona muerta | Dominio | `DEAD` | `VALID` | Unitaria | En progreso | Media |
-| 03 | Duplicado por ID | Infraestructura | `DUPLICATED` | `VALID` | Integración | Abierto | Alta |
-| 04 | Mock mal configurado | Aplicación | `DUPLICATED` | `NullPointerException` | Integración (mock) | En progreso | Media |
-| 05 | Error HTTP 500 | Delivery | `HTTP 400` | `HTTP 500` | Sistema (REST) | Abierto | Alta |
+| 01 | Edad negativa | Dominio | `INVALID` | `UNDERAGE` | Unitaria | Abierto | Alta |
+| 02 | Persona muerta | Dominio | `DEAD` | `VALID` | Unitaria | Resuelto | Media |
+| 03 | Duplicado por ID | Infraestructura | `DUPLICATED` | `VALID` | Integración | Resuelto | Alta |
+| 04 | Fallo de persistencia | Aplicación | `RegistryPersistenceException` | `NullPointerException` | Unitaria (mock) | Resuelto | Media |
+| 05 | Error HTTP 500 | Delivery | `HTTP 400` | `HTTP 500` | Sistema (REST) | Resuelto | Alta |
 
 ---
 

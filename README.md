@@ -7,7 +7,7 @@ En el flujo de desarrollo de software, a diferencia de las **pruebas unitarias**
 
 ## 🎯 Objetivo General
 
-Comprender, diseñar e implementar **pruebas de integración y de sistema** sobre una aplicación con **arquitectura limpia**, usando herramientas como **JUnit 4/5**, **Mockito**, **H2** y **Spring Boot Test**.
+Comprender, diseñar e implementar **pruebas de integración y de sistema** sobre una aplicación con **arquitectura limpia**, usando herramientas como **JUnit**, **Mockito**, **H2**, **Testcontainers** y **Spring Boot Test**.
 
 ---
 
@@ -15,7 +15,9 @@ Comprender, diseñar e implementar **pruebas de integración y de sistema** sobr
 
 - [PRUEBAS DE INTEGRACIÓN BÁSICAS](#pruebas-de-integración-básicas)
 - [Prueba de Integración con BD H2](#prueba-de-integración-con-bd-h2)
-- [Pruebas de Integración con Mocks](#pruebas-de-integración-con-mocks)
+- [Dobles de prueba para aislar el caso de uso](#dobles-de-prueba-para-aislar-el-caso-de-uso)
+- [Bases de datos reales con Testcontainers](#bases-de-datos-reales-con-testcontainers)
+- [Contract testing con Pact](#contract-testing-con-pact)
 - [Prueba de Sistema caja negra](#prueba-de-sistema-caja-negra)
 - [Ejecución de las pruebas](#ejecución-de-las-pruebas)
 - [Buenas prácticas](#buenas-prácticas)
@@ -36,35 +38,40 @@ Ejemplo: la clase `Registry` (que valida votantes) + `RegistryRepository` (que g
 Verifican el comportamiento del software como caja negra, a través de su interfaz pública (ej: endpoints HTTP, CLI).
 Ejemplo: hacer un `POST /register` y validar la respuesta sin importar la implementación interna.
 
-## COMOCE EL TALLER
+## CONOCE EL TALLER
 
 ### Estructura del Proyecto
 
-Verifica los nuevos componentes en la estrucutra del ejercicio de la registraduría:
+Verifica los nuevos componentes en la estructura del ejercicio de la registraduría:
 
-```gherkin
-main/edu/unisabana/tyvs/registry/
- ├─ domain/
- │   ├─ model/                 # Person, Gender, RegisterResult
- │   └─ service/               # (vacío) o mueve Registry a application
+```text
+src/main/java/edu/unisabana/tyvs/registry/
+ ├─ RegistryApplication.java          # arranque de Spring Boot
+ ├─ config/
+ │   └─ RegistryConfig.java           # cableado: qué implementación se inyecta
+ ├─ domain/model/                     # Person, Gender, RegisterResult
  ├─ application/
- │   ├─ usecase/               # Registry
- │   └─ port/out/              # RegistryRepositoryPort
- ├─ infrastructure/persistence/# RegistryRepository (H2/JDBC), RegistryRecord
- │   ├─ RegistryRecord
- │   └─ RegistryRepository
- └─ delivery/                    # capa de exposición (inbound adapters)
-   ├─ rest/                     # HTTP/REST
-   │  ├─ RegistryController.java
-   │  └─ dto/PersonRequest.java
-   ├─ cli/                      # (si algún día hay consola)
-   └─ messaging/                # (si algún día hay colas)
-test/edu/unisabana/tyvs/registry/
- ├─ application/
- │   ├─ usecase/               # RegistryTest, RegistryWithMockTest
- └─ delivery/                    # capa de exposición (inbound adapters)
-     ├─ rest/                     # RegistryControllerIT
+ │   ├─ usecase/                      # Registry, RegistryPersistenceException
+ │   └─ port/out/                     # RegistryRepositoryPort
+ ├─ infrastructure/persistence/       # RegistryRepository (JDBC), RegistryRecord
+ └─ delivery/rest/                    # capa de exposición (inbound adapters)
+     ├─ RegistryController.java
+     └─ RegistryExceptionHandler.java # traduce excepciones a códigos HTTP
+
+src/main/java/edu/unisabana/tyvs/registry/domain/model/rq/
+ └─ PersonDTO.java                    # cuerpo JSON de la petición
+
+src/test/java/edu/unisabana/tyvs/registry/
+ ├─ application/usecase/
+ │   ├─ RegistryWithMockTest.java     # UNITARIA  (mock del puerto)
+ │   └─ RegistryIT.java               # INTEGRACIÓN (H2 real)
+ ├─ infrastructure/persistence/
+ │   └─ RegistryRepositoryPostgresIT.java  # INTEGRACIÓN (PostgreSQL en Docker)
+ └─ delivery/rest/
+     └─ RegistryControllerIT.java     # SISTEMA (HTTP de punta a punta)
 ```
+
+> 📌 **La convención de nombres no es cosmética.** `*Test.java` lo ejecuta Surefire en `mvn test`; `*IT.java` lo ejecuta Failsafe en `mvn verify`. Por eso una prueba que toca una base de datos **nunca** debe llamarse `*Test`: la volvería parte del ciclo rápido y lo haría lento y frágil.
 
 ---
 
@@ -74,7 +81,8 @@ Agregamos dependencias y plugins clave al `pom.xml`.
 
 ```xml
   <dependencies>
-    <!-- JUnit 5 -->
+    <!-- Motor vintage: ejecuta pruebas JUnit 4 sobre la plataforma JUnit 5.
+         ES OBLIGATORIO mientras existan pruebas con @Before / org.junit.Assert. -->
     <dependency>
       <groupId>org.junit.vintage</groupId>
       <artifactId>junit-vintage-engine</artifactId>
@@ -82,7 +90,7 @@ Agregamos dependencias y plugins clave al `pom.xml`.
       <scope>test</scope>
     </dependency>
 
-    <!-- JUnit 4 -->
+    <!-- JUnit 4: anotaciones y aserciones clásicas -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -104,28 +112,27 @@ Agregamos dependencias y plugins clave al `pom.xml`.
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
 
-    <!-- Tests Spring + JUnit 4/5 -->
+    <!-- Trae JUnit 5, AssertJ, Hamcrest, Mockito y el soporte de test de Spring -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
-      <exclusions>
-        <!-- si te quedas con JUnit 4, excluye vintage o ajusta según tu setup -->
-      </exclusions>
     </dependency>
 
-    <!-- H2: base de datos en memoria para pruebas de integración -->
+    <!-- Validación de @RequestBody con @Valid.
+         Desde Spring Boot 2.3 ya NO viene incluida en spring-boot-starter-web. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+
+    <!-- H2: base de datos en memoria.
+         scope runtime (no test): la aplicación también la necesita al ejecutarse. -->
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
       <version>2.2.224</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>1.18.34</version>
+      <scope>runtime</scope>
     </dependency>
 
   </dependencies>
@@ -133,10 +140,13 @@ Agregamos dependencias y plugins clave al `pom.xml`.
 
 **Explicación:**
 
-- `junit-jupiter`: corresponde al motor de **JUnit 5**, que incluye las anotaciones principales como `@Test`, `@BeforeEach`, `@AfterEach` y la clase `Assertions`.
-En este proyecto se utiliza **JUnit 4** como base, pero también se integra **JUnit 5** (Jupiter) para la ejecución de pruebas más especializadas o con nuevas características del framework, como el soporte para pruebas parametrizadas o mayor compatibilidad con **Spring Boot Test**.
-- `mockito-core`: simula dependencias externas, ideal cuando no quieres depender de IO real.
-- `h2`: BD embebida que se crea en memoria para cada prueba → rápida, aislada, no requiere instalación.
+- `junit-vintage-engine`: es el **motor que permite ejecutar pruebas JUnit 4 sobre la plataforma JUnit 5**. No es "JUnit 5" ni una alternativa a JUnit 4: es el puente entre ambos.
+- `junit` 4.13.2: las anotaciones y aserciones que usan las pruebas de este taller (`@Before`, `org.junit.Assert`).
+- `spring-boot-starter-test`: trae JUnit 5 (Jupiter), AssertJ, Hamcrest, Mockito y el soporte de Spring. **Desde Spring Boot 2.4 ya no incluye vintage**, y por eso lo declaramos aparte.
+- `mockito-core`: crea dobles de prueba, ideal cuando no quieres depender de IO real.
+- `h2`: BD embebida que se crea en memoria → rápida, aislada, sin instalación.
+
+> ⚠️ **Nunca excluya `junit-vintage-engine`.** Es un error frecuente: parece razonable "quitar JUnit 5 si uso JUnit 4", pero vintage es justamente lo que ejecuta sus pruebas JUnit 4. Si lo excluye, **las pruebas dejan de correr en silencio**: `mvn test` termina con `BUILD SUCCESS` y `Tests run: 0`. Es uno de los falsos verdes más difíciles de detectar, porque nada falla — simplemente no se prueba nada.
 
 ---
 
@@ -149,9 +159,11 @@ En este proyecto se utiliza **JUnit 4** como base, pero también se integra **JU
 Las pruebas de integración evalúan la **interacción entre múltiples módulos o capas**.
 En este taller, se probará la relación entre el **caso de uso `Registry`** y el **adaptador `RegistryRepository`** (que usa una BD en memoria H2).
 
-#### Ejemplo Base: `RegistryTest`
+#### Ejemplo Base: `RegistryIT`
 
-Crear el archivo: `edu/unisabana/tyvs/registry/application/usecase/RegistryTest.java`
+Crear el archivo: `src/test/java/edu/unisabana/tyvs/registry/application/usecase/RegistryIT.java`
+
+> El sufijo **IT** (no `Test`) es deliberado: esta prueba abre una base de datos real, así que pertenece al ciclo de `mvn verify`, no al de `mvn test`.
 
 Dentro de la clase agregar el método, lea atentamente la documentación de la clase:
 
@@ -177,7 +189,7 @@ import static org.junit.Assert.*;
  *   <li><b>Assert</b>: verificación de los resultados esperados.</li>
  * </ul>
  */
-public class RegistryTest {
+public class RegistryIT {
 
     private RegistryRepositoryPort repo;
     private Registry registry;
@@ -250,13 +262,13 @@ public class RegistryTest {
 
 #### Explicación paso a paso
 
-1. **@BeforeEach → setup()**
+1. **@Before → setup()** — anotación de JUnit 4, que es la que usa esta clase (en JUnit 5 el equivalente es `@BeforeEach`).
    - Configura una BD H2 en memoria (`jdbc:h2:mem:regdb;DB_CLOSE_DELAY=-1`).
    - Llama a `repo.initSchema()` para crear la tabla de votantes.
    - Crea un objeto `Registry` que usará ese `repo` real.
 
 2. **Test**
-   - Inserta a `p1` → el método `registry.registerVoter(p1)` ejecuta un `INSERT INTO voters(...)`.
+   - Inserta a `p1` → el método `registry.registerVoter(p1)` ejecuta un `INSERT INTO registry(...)`.
    - Luego se hace una validación directa con `repo.existsById(100)` → consulta a la tabla H2 para confirmar que quedó.
    - Inserta a `p2` con mismo id → antes de intentar guardar, se hace un `SELECT` en la BD y detecta duplicado, devolviendo `DUPLICATED`.
 
@@ -264,8 +276,7 @@ public class RegistryTest {
 
 #### Actividades con el uso de BD H2
 
-1. Implementa pruebas para los siguientes casos:
-   - Persona duplicada (`DUPLICATED`)
+1. Implementa pruebas para los siguientes casos (el de duplicados ya viene resuelto como ejemplo):
    - Menor de edad (`UNDERAGE`)
    - Persona fallecida (`DEAD`)
    - ID inválido (`INVALID`)
@@ -274,17 +285,36 @@ public class RegistryTest {
 
 #### 💡 Reto adicional con el uso de BD H2
 
-Simula un error de conexión en H2 y observa cómo responde tu caso de uso.
+Simula un error de conexión y observa cómo responde tu caso de uso. `Registry` traduce el fallo de infraestructura a una `RegistryPersistenceException`, de modo que la capa de entrega puede decidir el código HTTP sin conocer JDBC. Verifíquelo con un mock:
+
+```java
+when(repo.existsById(9)).thenThrow(new java.sql.SQLException("conexión perdida"));
+assertThrows(RegistryPersistenceException.class, () -> registry.registerVoter(p));
+```
+
+Este escenario es prácticamente imposible de provocar con una base de datos real: es el ejemplo canónico de para qué sirve un mock.
 
 ---
 
-### Pruebas de Integración con Mocks
+### Dobles de prueba para aislar el caso de uso
 
 Cuando no se desea usar una base de datos real, podemos **simular el repositorio** con Mockito.
 
+> ⚠️ **Ojo con el nombre: esto NO es una prueba de integración.** Si todos los colaboradores están simulados, no se está integrando nada — es una prueba **unitaria** del caso de uso. La distinción importa porque las dos responden preguntas diferentes:
+>
+> | | `RegistryWithMockTest` (unitaria) | `RegistryIT` (integración) |
+> |---|---|---|
+> | Colaborador | Mock del puerto | `RegistryRepository` real sobre H2 |
+> | Qué verifica | Que el caso de uso **colabora** bien (llamó a `save`, no lo llamó) | Que los datos **quedaron** realmente guardados |
+> | Detecta | Errores de lógica de negocio | Errores de SQL, esquema, tipos, transacciones |
+> | Velocidad | Milisegundos | Décimas de segundo |
+> | No puede detectar | Que el `INSERT` está mal escrito | Poco; pero es más lenta y frágil |
+>
+> Se necesitan **ambas**. El error común es creer que los mocks reemplazan a la integración: un mock siempre responde lo que usted le dijo que respondiera, incluso si la base de datos real haría otra cosa.
+
 #### Ejemplo Base: `RegistryWithMockTest`
 
-Archivo: `src/test/edu/unisabana/tyvs/registry/application/usecase/RegistryWithMockTest.java`
+Archivo: `src/test/java/edu/unisabana/tyvs/registry/application/usecase/RegistryWithMockTest.java`
 
 ```java
 package edu.unisabana.tyvs.registry.application.usecase;
@@ -386,6 +416,219 @@ Crea una versión **FakeRepository** que guarde los datos en una `HashMap` en me
 
 ---
 
+---
+
+### Bases de datos reales con Testcontainers
+
+H2 es rápida y no requiere instalación, pero tiene un problema que conviene mirar de frente: **no es la base de datos de producción**. Difiere en dialecto SQL, en tipos, en el plegado de identificadores y en el comportamiento transaccional. Una prueba verde contra H2 puede ocultar un fallo que solo aparece cuando el código llega a PostgreSQL.
+
+**Testcontainers** resuelve eso: levanta un motor real dentro de un contenedor Docker desde la propia prueba, ejecuta contra él, y lo destruye al terminar. Sin instalar nada a mano y sin contaminar la máquina.
+
+#### Una divergencia real, medida
+
+Este no es un riesgo teórico. Ejecutando el **mismo** `CREATE TABLE` y la **misma** consulta en los dos motores:
+
+```text
+H2       ::  SELECT "name" FROM registry  ->  FALLA: Columna "name" no encontrada
+POSTGRES ::  SELECT "name" FROM registry  ->  OK, valor = Ana
+```
+
+¿Por qué? El estándar SQL dice que los identificadores sin comillas se pliegan a una caja, pero **no dice a cuál**, y cada motor eligió distinto:
+
+| | Identificador sin comillas | Resultado |
+|---|---|---|
+| **H2** | se pliega a MAYÚSCULAS | la columna se llama `NAME` |
+| **PostgreSQL** | se pliega a minúsculas | la columna se llama `name` |
+
+Un identificador **entrecomillado**, en cambio, se toma literal. De ahí que `SELECT "name"` resuelva en PostgreSQL y falle en H2, pese a que el esquema se creó con la misma sentencia.
+
+Conclusión para el taller: **el mismo SQL no es portable**. Es exactamente el tipo de defecto que una prueba con H2 nunca encontrará.
+
+#### Dependencias (`pom.xml`)
+
+```xml
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>1.19.8</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>1.19.8</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+```
+
+> ⚠️ **Prerrequisito**: Docker debe estar corriendo. Es el único punto del taller que lo exige. Verifíquelo con `docker version` antes de continuar.
+
+#### Ejemplo base: `RegistryRepositoryPostgresIT`
+
+```java
+@Testcontainers
+class RegistryRepositoryPostgresIT {
+
+    @Container
+    private static final PostgreSQLContainer<?> POSTGRES =
+            new PostgreSQLContainer<>("postgres:16-alpine")
+                    .withDatabaseName("registraduria")
+                    .withUsername("tyvs")
+                    .withPassword("tyvs");
+
+    @BeforeAll
+    static void requiereDocker() {
+        // Si no hay Docker, la prueba se SALTA en vez de fallar.
+        assumeTrue(DockerClientFactory.instance().isDockerAvailable(),
+                "Docker no está disponible: se omiten las pruebas con Testcontainers");
+    }
+
+    @BeforeEach
+    void setUp() throws Exception {
+        repo = new RegistryRepository(
+                POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+        repo.initSchema();
+        repo.deleteAll();
+        registry = new Registry(repo);
+    }
+
+    // ... las pruebas usan el MISMO código de producción que con H2
+}
+```
+
+Note dos detalles de diseño:
+
+1. **El contenedor es `static`.** Se levanta una vez por clase, no una por prueba. Arrancar PostgreSQL cuesta segundos; hacerlo en cada método volvería la suite inusable.
+2. **`assumeTrue` en vez de fallar.** Un compañero sin Docker verá las pruebas como *omitidas*, no como *rotas*. Una prueba que falla por falta de infraestructura enseña al equipo a ignorar el rojo.
+
+#### Cuándo usar cada una
+
+No se trata de reemplazar H2 por Testcontainers, sino de saber para qué sirve cada una:
+
+| | H2 | Testcontainers |
+|---|---|---|
+| Velocidad | milisegundos | segundos |
+| Fidelidad | aproximada | total |
+| Prerrequisitos | ninguno | Docker |
+| Cuándo | ciclo rápido mientras desarrolla | antes de integrar, y en CI |
+
+#### Actividades con Testcontainers
+
+1. Ejecute `mvn clean verify` y compare el tiempo de `RegistryIT` (H2) con el de `RegistryRepositoryPostgresIT`. ¿Cuánto cuesta la fidelidad?
+2. Escriba una consulta que funcione en H2 y falle en PostgreSQL (o al revés). Documéntela en su Wiki.
+3. Cambie la imagen a `postgres:13-alpine`. ¿Siguen pasando todas las pruebas? Ese es, en una línea, el valor de poder fijar la versión del motor.
+
+---
+
+### Contract testing con Pact
+
+Llegamos al hueco que ninguna de las técnicas anteriores cubre.
+
+Imagine que la Registraduría deja de responder texto plano y empieza a responder `{"resultado":"VALID"}`. ¿Qué prueba se entera?
+
+| Prueba | ¿Detecta el cambio? | Por qué |
+|---|---|---|
+| `RegistryWithMockTest` (mock) | ❌ No | El mock responde lo que usted le dijo, no lo que responde el servicio real |
+| `RegistryIT` (H2) | ❌ No | No pasa por HTTP |
+| `RegistryControllerIT` (sistema) | ❌ No | Verifica al proveedor **contra sí mismo**; si actualiza la prueba junto con el código, sigue verde |
+| Pruebas del consumidor | ⚠️ Sí, pero tarde | En su propio pipeline, o peor: en producción |
+
+Ese es el problema real de los sistemas distribuidos: **cada equipo prueba su parte y todas pasan, pero el sistema completo está roto**. La respuesta tradicional —levantar todos los servicios y probarlos juntos— es lenta, frágil y no escala.
+
+#### La idea: el consumidor escribe el contrato
+
+En el *consumer-driven contract testing*:
+
+1. El **consumidor** declara qué espera del proveedor y ejecuta sus pruebas contra un servidor simulado que se comporta así. Como subproducto genera un archivo de **pacto**.
+2. El **proveedor** toma ese pacto y verifica, **en su propio pipeline**, que sigue cumpliéndolo.
+
+Los dos servicios nunca se levantan al mismo tiempo. Cada equipo corre su parte cuando quiere, y aun así el acuerdo queda verificado de punta a punta.
+
+#### El consumidor de este taller
+
+El enunciado de la Registraduría siempre mencionó que *"se generarán los certificados electorales de aquellas personas cuyo voto sea válido"*, pero ese servicio nunca existió. Ahora sí: `edu.unisabana.tyvs.certificados` es un servicio que pide a la Registraduría registrar un votante y emite el certificado solo si la respuesta es `VALID`.
+
+> 📌 En un proyecto real, `certificados` viviría en **otro repositorio, con otro despliegue y otro equipo**. Aquí convive con el proveedor solo para que el taller quepa en un proyecto. Lo que importa es que el consumidor no conoce ni la base de datos ni las reglas de negocio de la Registraduría: **solo su contrato HTTP**.
+
+#### Lado consumidor
+
+```java
+@ExtendWith(PactConsumerTestExt.class)
+@PactTestFor(providerName = "registraduria", port = "0", pactVersion = PactSpecVersion.V3)
+class CertificadoServicePactTest {
+
+    @Pact(consumer = "certificados", provider = "registraduria")
+    public RequestResponsePact votanteValido(PactDslWithProvider builder) {
+        return builder
+                .given("no hay ningún votante registrado con id 900")   // estado requerido
+                .uponReceiving("un registro de votante válido")
+                .path("/register").method("POST").headers(JSON)
+                .body("{\"name\":\"Ana\",\"id\":900,\"age\":30,\"gender\":\"FEMALE\",\"alive\":true}")
+                .willRespondWith()
+                .status(200).body("VALID")
+                .toPact();
+    }
+
+    @Test
+    @PactTestFor(pactMethod = "votanteValido")
+    void emiteCertificadoCuandoElVotanteEsValido(MockServer mockServer) {
+        CertificadoService servicio =
+                new CertificadoService(new RegistraduriaClient(mockServer.getUrl()));
+
+        assertEquals("CERT-900", servicio.emitirCertificado(900, "Ana", 30, "FEMALE", true));
+    }
+}
+```
+
+Al ejecutarlo se genera `target/pacts/certificados-registraduria.json`.
+
+#### Lado proveedor
+
+```java
+@Provider("registraduria")
+@PactFolder("target/pacts")
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+class RegistraduriaProviderPactIT {
+
+    @TestTemplate
+    @ExtendWith(PactVerificationInvocationContextProvider.class)
+    void verificarPacto(PactVerificationContext context) {
+        context.verifyInteraction();   // reproduce TODAS las interacciones del pacto
+    }
+
+    /** Cada @State corresponde a un "given" del pacto. */
+    @State("ya existe un votante registrado con id 901")
+    void conVotante901() {
+        registry.registerVoter(new Person("Luis", 901, 40, Gender.MALE, true));
+    }
+}
+```
+
+El `@State` es la pieza que suele costar entender: el consumidor **nombra** el estado que necesita (`"ya existe un votante con id 901"`), pero es el proveedor quien sabe **cómo montarlo**. El consumidor no sabe que hay una tabla, y no debe saberlo.
+
+#### Compruébelo usted mismo
+
+La mejor forma de convencerse de que esto no es decorativo:
+
+1. Ejecute `mvn clean verify`. Todo en verde.
+2. En `RegistryController`, cambie `return r.name();` por `return "{\"resultado\":\"" + r.name() + "\"}";`
+3. Ejecute `mvn verify` otra vez.
+
+`RegistryControllerIT` seguirá pasando si usted también actualiza su aserción — pero **la verificación del pacto falla**, porque el consumidor sigue esperando texto plano. Ese es exactamente el fallo que, sin Pact, habría llegado a producción.
+
+4. Revierta el cambio y confirme que vuelve a verde.
+
+#### Actividades con Pact
+
+1. Agregue una tercera interacción al pacto (por ejemplo, un votante menor de edad) con su `@State` correspondiente.
+2. Cambie el nombre del campo `id` a `documento` **solo en el consumidor**. ¿Qué prueba falla y en qué lado?
+3. Investigue qué es un **Pact Broker** y explique en el Wiki por qué leer los pactos de una carpeta local no sirve cuando los equipos están separados.
+
 ### Prueba de Sistema caja negra
 
 Las pruebas de sistema validan el **comportamiento del sistema completo**, incluyendo controladores HTTP, lógica de negocio y persistencia.
@@ -441,8 +684,8 @@ public class RegistryControllerIT {
         headers.setContentType(MediaType.APPLICATION_JSON);
         ResponseEntity<String> resp = rest.postForEntity("/register", new HttpEntity<>(json, headers), String.class);
 
-        assert resp.getStatusCode() == HttpStatus.OK;
-        assert "VALID".equals(resp.getBody());
+        assertEquals(HttpStatus.OK, resp.getStatusCode());
+        assertEquals("VALID", resp.getBody());
     }
 }
 ```
@@ -467,23 +710,28 @@ Agrega validaciones con `@Valid` en el `PersonDTO` y prueba que el sistema devue
 
 ### Ejecución de las pruebas
 
-- Solo unitarias:
+- **Solo las unitarias** (rápido, sin base de datos ni Docker). Ejecuta los `*Test.java` vía Surefire:
 
 ```bash
 mvn test
 ```
 
-- Unitarias + integración + sistema:
+- **Todo: unitarias + integración + sistema.** Añade los `*IT.java` vía Failsafe, incluidos los de Testcontainers:
 
 ```bash
 mvn verify
 ```
 
-Reporte de cobertura combinado con JaCoCo:
+> ⚠️ `mvn test` **no ejecuta los `*IT.java`**. Si usa `test` para verificar su trabajo verá `BUILD SUCCESS` sin haber probado ninguna integración. Para eso está `verify`.
 
-```gherkin
-target/site/jacoco/index.html
+Reporte de cobertura **combinado** (unitarias + integración) con JaCoCo:
+
+```text
+target/site/jacoco/index.html            # unitarias (Surefire)
+target/site/jacoco-it/index.html         # integración (Failsafe)
 ```
+
+El `pom.xml` declara las cuatro ejecuciones de JaCoCo (`prepare-agent`, `report`, `prepare-agent-integration`, `report-integration`). Sin las dos últimas, lo que cubren los `*IT` no contaría y el 80% global sería inalcanzable.
 
 ---
 
@@ -535,7 +783,7 @@ Incluye **enlaces al código** (`Registry.java`, `RegistryController.java`, test
 
 ### 3) Pruebas de Integración
 
-- Al menos **3 pruebas con base de datos H2** cubriendo interacciones reales entre `Registry` y `RegistryRepository`.
+- Al menos **4 pruebas con base de datos H2** cubriendo interacciones reales entre `Registry` y `RegistryRepository`.
 - Casos mínimos:
   - Persona válida → `VALID`
   - Persona duplicada → `DUPLICATED`
@@ -557,7 +805,7 @@ Incluye **enlaces al código** (`Registry.java`, `RegistryController.java`, test
 
 - Al menos **2 pruebas end-to-end** usando:
   - `TestRestTemplate`, `MockMvc` o cliente HTTP equivalente.
-- Validar los endpoints reales (`/register`) devolviendo respuestas HTTP correctas (`200`, `400`, `500`).
+- Validar los endpoints reales (`/register`) devolviendo respuestas HTTP correctas (`200` para una petición válida, `400` para datos inválidos del cliente).
 - Casos mínimos:
   - Registro exitoso (status 200, body “VALID”).
   - Entrada inválida o inconsistente (status 400 / 422).
@@ -587,7 +835,7 @@ Incluye **enlaces al código** (`Registry.java`, `RegistryController.java`, test
   - **Caso probado**
   - **Resultado esperado vs. obtenido**
   - **Causa probable**
-  - **Estado:** Abierto / Cerrado
+  - **Estado:** Abierto / En progreso / Resuelto
   - **Evidencia:** fragmento de log o screenshot
 
 ### 9) Calidad del código
@@ -613,19 +861,23 @@ Incluye **enlaces al código** (`Registry.java`, `RegistryController.java`, test
 | **Documentación en Wiki** | Contiene secciones completas (Inicio, tipos de pruebas, resultados, reflexión, etc.) con enlaces al código. | Wiki completo, claro y con enlaces a todas las clases y tests. | Wiki completo con leves omisiones o sin algunos enlaces. | Wiki incompleto o con poca claridad. | Wiki muy limitado o confuso. | No hay Wiki o está vacío. |
 | **Pruebas de integración (H2)** | Implementa pruebas reales entre `Registry` y `RegistryRepository`. | ≥3 pruebas completas y funcionales, usando H2 y patrón AAA. | Pruebas funcionales pero con cobertura parcial. | Pruebas incompletas o sin verificación clara de persistencia. | Escenarios incorrectos o sin H2 configurado. | No existen pruebas de integración. |
 | **Pruebas con mocks (Mockito)** | Uso de mocks y verificación de interacciones. | ≥2 pruebas con Mockito usando `when`, `verify`, `never`, etc. correctamente. | Pruebas correctas pero con poca variedad o validación parcial. | Usa mocks sin verificar interacciones o comportamiento. | Configuración incorrecta de mocks. | No existen pruebas con mocks. |
-| **Pruebas de sistema (HTTP)** | Validación de endpoints reales con MockMvc o RestTemplate. | ≥2 pruebas HTTP completas (200, 400, 500), con aserciones válidas. | Pruebas funcionales pero con casos limitados. | Pruebas incompletas o con endpoints incorrectos. | Pruebas fallidas o sin conexión al servidor. | No existen pruebas HTTP. |
+| **Pruebas de sistema (HTTP)** | Validación de endpoints reales con TestRestTemplate o MockMvc. | ≥2 pruebas HTTP completas (200 y 400), con aserciones reales (`assertEquals`, no la palabra clave `assert`). | Pruebas funcionales pero con casos limitados. | Pruebas incompletas o con endpoints incorrectos. | Pruebas fallidas o sin conexión al servidor. | No existen pruebas HTTP. |
+| **Bases de datos reales (Testcontainers)** | Ejecución de pruebas contra un motor real en Docker. | ≥2 pruebas con Testcontainers y una divergencia H2/PostgreSQL documentada. | ≥2 pruebas correctas, sin analizar divergencias. | 1 prueba, o el contenedor mal configurado (no estático). | Configurado pero sin pruebas que lo usen. | No usa Testcontainers. |
+| **Contract testing (Pact)** | Contrato consumidor-proveedor verificado en ambos lados. | Pacto con ≥3 interacciones, verificación del proveedor en verde y demostración de que detecta una ruptura. | Pacto y verificación correctos, sin demostrar la ruptura. | Solo el lado consumidor, o sin ``. | Configurado pero el pacto no se verifica. | No aplica contract testing. |
 | **Cobertura de pruebas (JaCoCo)** | Nivel de cobertura global y por capa. | ≥80% global y ≥70% en `application` y `delivery`. | Entre 70–79% global, sin grandes omisiones. | Cobertura media (50–69%) o irregular. | Cobertura <50%. | No presenta reporte o no genera cobertura. |
 | **Matriz de pruebas** | Tabla de casos probados y correspondencia con métodos de test. | Matriz completa, clara y actualizada. | Matriz parcial con algunos casos omitidos. | Matriz incompleta o sin correspondencia con código. | Matriz confusa o sin formato. | No entrega matriz. |
 | **Gestión de defectos** | Registro de defectos y análisis. | Documento `defectos.md` con al menos 1 caso bien analizado. | Documento con casos simulados pero comprensibles. | Documento incompleto o superficial. | Caso sin análisis o sin evidencias. | No entrega `defectos.md`. |
 | **Calidad del código** | Claridad, limpieza y consistencia del código. | Código limpio, sin duplicaciones, constantes extraídas, buen uso de excepciones. | Código comprensible con leves redundancias. | Código con duplicación o nombres poco claros. | Código confuso o sin buenas prácticas. | Código desorganizado o con errores graves. |
 | **Reflexión técnica** | Análisis de resultados y aprendizajes. | Reflexión profunda sobre diseño, pruebas y CI/CD. | Reflexión correcta pero superficial. | Reflexión breve o poco argumentada. | Reflexión vaga o sin relación con el taller. | No presenta reflexión. |
 
+> **Cómo suma**: 12 criterios × 5 pts = **60 puntos**.
+
 | Rango de puntaje | Desempeño                                                |
 | ---------------- | -------------------------------------------------------- |
-| 45 – 50          | Excelente dominio técnico y metodológico.                |
-| 35 – 44          | Buen trabajo con documentación o cobertura parcial.      |
-| 30 – 34          | Cumple con lo básico pero sin profundidad.               |
-| < 30             | No cumple con los criterios mínimos del taller/proyecto. |
+| 54 – 60          | Excelente dominio técnico y metodológico.                |
+| 42 – 53          | Buen trabajo con documentación o cobertura parcial.      |
+| 36 – 41          | Cumple con lo básico pero sin profundidad.               |
+| < 36             | No cumple con los criterios mínimos del taller/proyecto. |
 
 ---
 
@@ -722,7 +974,7 @@ Con esto se logra **mayor confianza en los despliegues**, **mejor trazabilidad d
 
 Este taller y su contenido fueron diseñados por el profesor **César Augusto Vega Fernández** como material académico para el curso *Testing y Validación de Software*, impartido en la **Maestría en Ingeniería de Software de la Universidad de La Sabana**.
 
-Su propósito es exclusivamente educativo y está orientado a fortalecer las competencias de los estudiantes en **TDD, AAA, Clases de Equivalencia, BDD** y validación de software en contextos de arquitectura limpia.
+Su propósito es exclusivamente educativo y está orientado a fortalecer las competencias de los estudiantes en **pruebas de integración, pruebas de sistema, dobles de prueba y bases de datos reales con Testcontainers** y validación de software en contextos de arquitectura limpia.
 
 ---
 
