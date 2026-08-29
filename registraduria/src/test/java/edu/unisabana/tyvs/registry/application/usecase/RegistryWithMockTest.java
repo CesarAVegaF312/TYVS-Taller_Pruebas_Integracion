@@ -168,4 +168,55 @@ public class RegistryWithMockTest {
         assertEquals(RegisterResult.DEAD, registry.registerVoter(p));
         verifyNoInteractions(repo);
     }
+
+    /**
+     * Edad negativa: dato IMPOSIBLE, no persona menor.
+     *
+     * <p>Es el caso que documenta el Defecto 01 de {@code defectos.md}. Antes
+     * devolvia {@link RegisterResult#UNDERAGE}, igual que una edad de 17, y esa
+     * confusion tiene consecuencias reales: a quien tiene 17 se le dice que
+     * espere; a quien aparece con -1 hay que corregirle el registro.</p>
+     */
+    @Test
+    public void shouldReturnInvalidAgeWhenAgeIsNegative() {
+        Person p = new Person("Imposible", 12, -1, Gender.UNIDENTIFIED, true);
+
+        assertEquals(RegisterResult.INVALID_AGE, registry.registerVoter(p));
+        verifyNoInteractions(repo);
+    }
+
+    /** Edad por encima del maximo biologico: tambien es un dato imposible. */
+    @Test
+    public void shouldReturnInvalidAgeWhenAgeExceedsMaximum() {
+        Person p = new Person("Matusalen", 13, Registry.MAX_AGE + 1, Gender.MALE, true);
+
+        assertEquals(RegisterResult.INVALID_AGE, registry.registerVoter(p));
+        verifyNoInteractions(repo);
+    }
+
+    /**
+     * VALOR LIMITE de la frontera entre UNDERAGE e INVALID_AGE.
+     *
+     * <p>La edad 0 es el borde exacto: un ano menos es imposible, y 0 es un
+     * dato correcto de un recien nacido que, evidentemente, no puede votar.
+     * Sin esta prueba, cambiar {@code < 0} por {@code <= 0} en el codigo no
+     * rompe nada, y esa mutacion sobrevive.</p>
+     */
+    @Test
+    public void shouldReturnUnderageWhenAgeIsZero() {
+        Person p = new Person("Recien nacida", 14, 0, Gender.FEMALE, true);
+
+        assertEquals(RegisterResult.UNDERAGE, registry.registerVoter(p));
+        verifyNoInteractions(repo);
+    }
+
+    /** VALOR LIMITE superior: la edad maxima exacta sigue siendo valida. */
+    @Test
+    public void shouldAcceptTheMaximumAge() throws Exception {
+        Person p = new Person("Centenaria", 15, Registry.MAX_AGE, Gender.FEMALE, true);
+        when(repo.existsById(15)).thenReturn(false);
+
+        assertEquals(RegisterResult.VALID, registry.registerVoter(p));
+        verify(repo).save(15, "Centenaria", Registry.MAX_AGE, true);
+    }
 }

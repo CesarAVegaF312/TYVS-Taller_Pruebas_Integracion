@@ -18,6 +18,9 @@ public class Registry {
     /** Edad minima para votar. */
     public static final int MIN_AGE = 18;
 
+    /** Edad maxima biologicamente posible; por encima, el dato es imposible. */
+    public static final int MAX_AGE = 120;
+
     private final RegistryRepositoryPort repo;
 
     public Registry(RegistryRepositoryPort repo) {
@@ -31,6 +34,12 @@ public class Registry {
             return RegisterResult.INVALID;
         if (!p.isAlive())
             return RegisterResult.DEAD;
+        // El orden importa: una edad imposible se descarta ANTES de preguntar
+        // si es menor de edad. Si se invirtiera, -1 caeria en la rama de
+        // UNDERAGE y el sistema le diria a esa persona que espere a cumplir
+        // anios, cuando lo que hay es un dato mal capturado.
+        if (p.getAge() < 0 || p.getAge() > MAX_AGE)
+            return RegisterResult.INVALID_AGE;
         if (p.getAge() < MIN_AGE)
             return RegisterResult.UNDERAGE;
 

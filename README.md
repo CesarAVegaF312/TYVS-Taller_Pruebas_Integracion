@@ -277,7 +277,8 @@ public class RegistryIT {
 #### Actividades con el uso de BD H2
 
 1. Implementa pruebas para los siguientes casos (el de duplicados ya viene resuelto como ejemplo):
-   - Menor de edad (`UNDERAGE`)
+   - Menor de edad (`UNDERAGE`, edad=17)
+   - Edad imposible (`INVALID_AGE`, edad=-1 o 121)
    - Persona fallecida (`DEAD`)
    - ID inválido (`INVALID`)
 2. Aplica el formato **AAA (Arrange – Act – Assert)** en cada test.
@@ -687,7 +688,7 @@ public class RegistryControllerIT {
 
 #### Actividades con Sistemas
 
-1. Realiza pruebas con distintos cuerpos JSON que produzcan los estados `VALID`, `DUPLICATED`, `UNDERAGE`, `DEAD`.
+1. Realiza pruebas con distintos cuerpos JSON que produzcan los estados `VALID`, `DUPLICATED`, `UNDERAGE`, `INVALID_AGE`, `DEAD`.
 2. Usa Postman o curl para verificar los endpoints `/register` y documenta tus observaciones.
 3. Implementa una prueba negativa (JSON incompleto o tipo incorrecto).
 
@@ -777,6 +778,7 @@ Incluye **enlaces al código** (`Registry.java`, `RegistryController.java`, test
   - Persona válida → `VALID`
   - Persona duplicada → `DUPLICATED`
   - Persona menor de edad → `UNDERAGE`
+  - Persona con edad imposible → `INVALID_AGE`
   - Persona fallecida → `DEAD`
 - Deben ejecutarse sin mocks, verificando que los datos se persisten realmente.
 - Usa formato **AAA (Arrange – Act – Assert)** y nombres descriptivos (por ejemplo `shouldReturnDuplicatedWhenIdAlreadyRegistered()`, como en `RegistryControllerIT`).
@@ -820,6 +822,8 @@ Incluye **enlaces al código** (`Registry.java`, `RegistryController.java`, test
 | Duplicado sin base de datos | el mock dice que el id existe | `DUPLICATED` | Mock | `RegistryWithMockTest.shouldReturnDuplicatedWhenRepoSaysExists()` |
 | Fallo de persistencia | el puerto lanza `SQLException` | `RegistryPersistenceException` | Mock | `RegistryWithMockTest.shouldWrapPersistenceFailure()` |
 | Persona menor de edad | id único, edad=17 | `UNDERAGE` | HTTP | `RegistryControllerIT.shouldReturnUnderageWhenPersonIsMinor()` |
+| Edad imposible | edad=-1 | `INVALID_AGE` | Mock | `RegistryWithMockTest.shouldReturnInvalidAgeWhenAgeIsNegative()` |
+| Valor límite entre las dos | edad=0 | `UNDERAGE` | Mock | `RegistryWithMockTest.shouldReturnUnderageWhenAgeIsZero()` |
 | Género inválido | `gender="X"` | HTTP 400 | HTTP | `RegistryControllerIT.shouldReturnBadRequestWhenGenderIsNotValid()` |
 | Dialecto SQL divergente | `SELECT "name"` | resuelve en PostgreSQL | Testcontainers | `RegistryRepositoryPostgresIT.shouldResolveQuotedLowercaseIdentifier()` |
 | Contrato con el consumidor | pacto de `certificados` | interacciones verificadas | Pact | `RegistraduriaProviderPactIT.verificarPacto()` |

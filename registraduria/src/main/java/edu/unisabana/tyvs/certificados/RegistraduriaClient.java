@@ -37,7 +37,7 @@ public class RegistraduriaClient {
 
     /**
      * Registra a un votante y devuelve el resultado tal como lo reporta la
-     * Registraduria ("VALID", "DUPLICATED", "UNDERAGE", "DEAD", "INVALID").
+     * Registraduria ("VALID", "DUPLICATED", "UNDERAGE", "INVALID_AGE", "DEAD", "INVALID").
      */
     public String registrarVotante(int id, String nombre, int edad, String genero, boolean vivo) {
         String json = String.format(
