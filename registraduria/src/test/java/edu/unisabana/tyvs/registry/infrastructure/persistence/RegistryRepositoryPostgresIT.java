@@ -5,10 +5,10 @@ import edu.unisabana.tyvs.registry.domain.model.Gender;
 import edu.unisabana.tyvs.registry.domain.model.Person;
 import edu.unisabana.tyvs.registry.domain.model.RegisterResult;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -23,7 +23,6 @@ import java.sql.Statement;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * PRUEBA DE INTEGRACION CONTRA UNA BASE DE DATOS REAL (Testcontainers).
@@ -44,10 +43,17 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * milisegundos. Por eso conviven las dos: H2 para el ciclo rapido durante el
  * desarrollo, PostgreSQL para la verificacion antes de integrar.
  *
- * Si Docker no esta disponible la prueba se SALTA (assumeTrue) en vez de
- * fallar: un companero sin Docker no deberia ver el build en rojo por eso.
+ * Si Docker no esta disponible la clase entera se SALTA en vez de fallar: un
+ * companero sin Docker no deberia ver el build en rojo por eso.
+ *
+ * OJO con COMO se hace ese salto. Un assumeTrue dentro de un @BeforeAll NO
+ * sirve: la extension @Testcontainers arranca los contenedores estaticos en su
+ * propio callback beforeAll, que se ejecuta ANTES, y el fallo ocurre al
+ * intentar levantar el contenedor. Hay que usar @EnabledIf, que JUnit evalua
+ * como condicion de ejecucion antes de invocar cualquier extension.
  */
 @Testcontainers
+@EnabledIf("hayDocker")
 @DisplayName("RegistryRepository contra PostgreSQL real")
 class RegistryRepositoryPostgresIT {
 
@@ -61,10 +67,13 @@ class RegistryRepositoryPostgresIT {
     private RegistryRepository repo;
     private Registry registry;
 
-    @BeforeAll
-    static void requiereDocker() {
-        assumeTrue(DockerClientFactory.instance().isDockerAvailable(),
-                "Docker no esta disponible: se omiten las pruebas con Testcontainers");
+    /** Condicion de ejecucion: se evalua ANTES de que la extension arranque nada. */
+    static boolean hayDocker() {
+        try {
+            return DockerClientFactory.instance().isDockerAvailable();
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     @BeforeEach
