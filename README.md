@@ -647,16 +647,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import static org.junit.Assert.assertEquals;
 
-// src/test/java/.../RegistryControllerIT.java
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+// Base de datos propia: H2 con DB_CLOSE_DELAY=-1 vive mientras viva la JVM, y
+// Surefire/Failsafe reutilizan la JVM entre clases. Sin un nombre distinto, un
+// id insertado aquí reaparecería en otra prueba.
+@TestPropertySource(properties = "registry.jdbc-url=jdbc:h2:mem:regdb_ctrl_it;DB_CLOSE_DELAY=-1")
 public class RegistryControllerIT {
 
-    // Los beans de RegistryRepositoryPort/Registry ya los provee RegistryConfig
-    // (component-scan del contexto de la aplicación), no hace falta redefinirlos aquí.
+    // No define beans propios: el cableado real vive en RegistryConfig. Si la
+    // prueba lo duplicara, estaría probando su propio cableado en vez del de
+    // producción, y además rompería el contexto por nombres de bean repetidos.
 
     @Autowired
     private TestRestTemplate rest;

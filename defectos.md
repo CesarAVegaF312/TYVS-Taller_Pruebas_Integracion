@@ -3,8 +3,6 @@
 > ℹ️ **Este archivo es un ejemplo del profesor**, no su entrega. Muestra el ciclo de vida completo de un defecto: detectado, analizado y cerrado con la prueba que lo verifica.
 > Para su taller parta de [`defectos_template.md`](defectos_template.md) y documente los defectos que **usted** encuentre.
 
-> ⚠️ **Este archivo es un EJEMPLO con datos ficticios** que muestra el formato esperado (ver también `defectos_template.md`). Los 5 defectos listados abajo **no** provienen de correr las pruebas reales de este proyecto — de hecho, el código actual no reproduce varios de ellos tal cual están descritos. Antes de entregar, reemplace este contenido por los defectos que usted encuentre al ejecutar sus propias pruebas.
-
 Este documento recopila los **defectos detectados durante las pruebas unitarias, de integración y de sistema** del proyecto **Registraduría**.
 Cada defecto se documenta de manera estructurada para facilitar su análisis, trazabilidad y corrección.
 
