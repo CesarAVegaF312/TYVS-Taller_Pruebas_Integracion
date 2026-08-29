@@ -16,12 +16,20 @@ Cada defecto se documenta de manera estructurada para facilitar su análisis, tr
 - **Caso de prueba:** Registro de persona con edad `-1`.
 - **Entrada:**
 `Person(name="Juan", id=101, age=-1, gender=MALE, alive=true)`
-- **Resultado esperado:** `INVALID` (una edad negativa es un dato imposible, no una persona menor)
+- **Resultado esperado:** `INVALID_AGE` (una edad negativa es un dato imposible, no una persona menor)
 - **Resultado obtenido:** `UNDERAGE`
-- **Causa probable:** `Registry` evalúa `age < MIN_AGE` sin distinguir entre "menor de edad" y "edad imposible". Una edad de `-1` cae en la misma rama que una de `17`.
+- **Causa probable:** `Registry` evaluaba `age < MIN_AGE` sin distinguir entre "menor de edad" y "edad imposible". Una edad de `-1` caía en la misma rama que una de `17`.
 - **Tipo de prueba:** Unitaria (dominio puro)
-- **Estado:** **Abierto** — es una decisión de diseño pendiente: ¿merece `INVALID_AGE` una constante propia en el enum?
+- **Estado:** **Resuelto** — se añadió `INVALID_AGE` al enum y la regla `age < 0 || age > MAX_AGE` **antes** de la de menor de edad. Verificado por `RegistryWithMockTest.shouldReturnInvalidAgeWhenAgeIsNegative()` y `shouldReturnInvalidAgeWhenAgeExceedsMaximum()`.
 - **Prioridad:** Alta
+
+> 🔍 **Por qué no era un detalle cosmético.** Las dos clases de equivalencia se parecen en el código y no se parecen en nada para quien usa el sistema: a una persona de 17 años se le dice *"espere a cumplir 18"*, mientras que un registro con `-1` significa que **alguien capturó mal el dato** y hay que corregirlo. Devolver `UNDERAGE` en ambos casos le da al segundo un consejo inútil.
+>
+> El orden de las dos comprobaciones también importa. Si se pregunta primero `age < MIN_AGE`, el `-1` entra por esa rama y `INVALID_AGE` queda inalcanzable — el enum tendría la constante y el sistema no la usaría nunca.
+>
+> Este defecto era además una **inconsistencia entre talleres**: el de pruebas unitarias ya distinguía los dos casos y este no, de modo que la misma Registraduría se comportaba distinto según el taller desde el que se mirara. Los dos describen ahora el mismo dominio.
+
+**Valor límite asociado:** la frontera entre las dos clases es la **edad 0** — un año menos es imposible, y `0` es el dato correcto de un recién nacido que no puede votar. Está cubierta por `RegistryWithMockTest.shouldReturnUnderageWhenAgeIsZero()`. Sin esa prueba, cambiar `< 0` por `<= 0` no rompe nada y la mutación sobrevive.
 
 ---
 
@@ -102,7 +110,7 @@ when(repo.existsById(7)).thenReturn(true);
 
 | ID | Caso de Prueba | Capa | Resultado Esperado | Resultado Obtenido | Tipo | Estado | Prioridad |
 |----|----------------|------|--------------------|--------------------|------|----------|------------|
-| 01 | Edad negativa | Dominio | `INVALID` | `UNDERAGE` | Unitaria | Abierto | Alta |
+| 01 | Edad negativa | Dominio | `INVALID_AGE` | `UNDERAGE` | Unitaria | Resuelto | Alta |
 | 02 | Persona muerta | Dominio | `DEAD` | `VALID` | Unitaria | Resuelto | Media |
 | 03 | Duplicado por ID | Infraestructura | `DUPLICATED` | `VALID` | Integración | Resuelto | Alta |
 | 04 | Fallo de persistencia | Aplicación | `RegistryPersistenceException` | `NullPointerException` | Unitaria (mock) | Resuelto | Media |
