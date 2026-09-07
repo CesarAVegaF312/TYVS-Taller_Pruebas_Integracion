@@ -13,6 +13,7 @@ Comprender, diseñar e implementar **pruebas de integración y de sistema** sobr
 
 ## Índice
 
+- [Complemento visual interactivo](#complemento-visual-interactivo)
 - [PRUEBAS DE INTEGRACIÓN BÁSICAS](#pruebas-de-integración-básicas)
 - [Prueba de Integración con BD H2](#prueba-de-integración-con-bd-h2)
 - [Dobles de prueba para aislar el caso de uso](#dobles-de-prueba-para-aislar-el-caso-de-uso)
@@ -37,6 +38,26 @@ Ejemplo: la clase `Registry` (que valida votantes) + `RegistryRepository` (que g
 - **Pruebas de sistema**
 Verifican el comportamiento del software como caja negra, a través de su interfaz pública (ej: endpoints HTTP, CLI).
 Ejemplo: hacer un `POST /register` y validar la respuesta sin importar la implementación interna.
+
+## Complemento visual interactivo
+
+Antes de escribir la primera prueba, abra el complemento visual del taller: una página interactiva que
+muestra **hasta dónde llega cada técnica**, qué código se ejecuta de verdad, qué queda reemplazado por un
+doble y qué defectos pasan por debajo sin que ninguna prueba los vea.
+
+- **Archivo local:** [`pruebas_integracion_visual.html`](pruebas_integracion_visual.html) — se abre con doble clic, sin servidor ni dependencias.
+- **En línea:** [La frontera de cada prueba](https://claude.ai/code/artifact/c45b5d79-222b-4db2-bdc2-2a56cc77e537)
+
+Contiene seis laboratorios, en el mismo orden de esta guía:
+
+| # | Laboratorio | Para qué sirve |
+|---|-------------|----------------|
+| 01 | Cinco pruebas, cinco fronteras | Ver qué componentes ejecuta realmente cada técnica: mock, H2, Testcontainers, HTTP y Pact. |
+| 02 | El banco de pruebas | Ejecutar `registerVoter` en vivo, ver cambiar la tabla `registry` y obtener la aserción que faltaría escribir. |
+| 03 | La misma persona por cuatro caminos | Recorrer paso a paso los diagramas de secuencia de `RegistryIT`, `RegistryWithMockTest`, `RegistryControllerIT` y el pacto. |
+| 04 | H2 no es PostgreSQL | Ejecutar las cuatro sentencias del plegado de identificadores y ver por qué el mismo SQL no es portable. |
+| 05 | ¿Qué prueba atrapa qué defecto? | Borrador de la matriz de pruebas y del archivo `defectos.md` que se entregan. |
+| 06 | `mvn test` frente a `mvn verify` | Entender por qué una prueba `*IT.java` no se ejecuta con `mvn test`. |
 
 ## CONOCE EL TALLER
 
