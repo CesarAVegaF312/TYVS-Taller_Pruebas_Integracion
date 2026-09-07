@@ -5,13 +5,13 @@ En el flujo de desarrollo de software, a diferencia de las **pruebas unitarias**
 
 ---
 
-## 🎯 Objetivo General
+## Objetivo General
 
 Comprender, diseñar e implementar **pruebas de integración y de sistema** sobre una aplicación con **arquitectura limpia**, usando herramientas como **JUnit**, **Mockito**, **H2**, **Testcontainers** y **Spring Boot Test**.
 
 ---
 
-## 📑 Índice
+## Índice
 
 - [PRUEBAS DE INTEGRACIÓN BÁSICAS](#pruebas-de-integración-básicas)
 - [Prueba de Integración con BD H2](#prueba-de-integración-con-bd-h2)
@@ -71,7 +71,7 @@ src/test/java/edu/unisabana/tyvs/registry/
      └─ RegistryControllerIT.java     # SISTEMA (HTTP de punta a punta)
 ```
 
-> 📌 **La convención de nombres no es cosmética.** `*Test.java` lo ejecuta Surefire en `mvn test`; `*IT.java` lo ejecuta Failsafe en `mvn verify`. Por eso una prueba que toca una base de datos **nunca** debe llamarse `*Test`: la volvería parte del ciclo rápido y lo haría lento y frágil.
+> **La convención de nombres no es cosmética.** `*Test.java` lo ejecuta Surefire en `mvn test`; `*IT.java` lo ejecuta Failsafe en `mvn verify`. Por eso una prueba que toca una base de datos **nunca** debe llamarse `*Test`: la volvería parte del ciclo rápido y lo haría lento y frágil.
 
 ---
 
@@ -146,7 +146,7 @@ Agregamos dependencias y plugins clave al `pom.xml`.
 - `mockito-core`: crea dobles de prueba, ideal cuando no quieres depender de IO real.
 - `h2`: BD embebida que se crea en memoria → rápida, aislada, sin instalación.
 
-> ⚠️ **Nunca excluya `junit-vintage-engine`.** Es un error frecuente: parece razonable "quitar JUnit 5 si uso JUnit 4", pero vintage es justamente lo que ejecuta sus pruebas JUnit 4. Si lo excluye, **las pruebas dejan de correr en silencio**: `mvn test` termina con `BUILD SUCCESS` y `Tests run: 0`. Es uno de los falsos verdes más difíciles de detectar, porque nada falla — simplemente no se prueba nada.
+> **Nunca excluya `junit-vintage-engine`.** Es un error frecuente: parece razonable "quitar JUnit 5 si uso JUnit 4", pero vintage es justamente lo que ejecuta sus pruebas JUnit 4. Si lo excluye, **las pruebas dejan de correr en silencio**: `mvn test` termina con `BUILD SUCCESS` y `Tests run: 0`. Es uno de los falsos verdes más difíciles de detectar, porque nada falla — simplemente no se prueba nada.
 
 ---
 
@@ -272,7 +272,7 @@ public class RegistryIT {
    - Luego se hace una validación directa con `repo.existsById(100)` → consulta a la tabla H2 para confirmar que quedó.
    - Inserta a `p2` con mismo id → antes de intentar guardar, se hace un `SELECT` en la BD y detecta duplicado, devolviendo `DUPLICATED`.
 
-👉 Así queda más claro: en la **primera llamada** se hace el insert, y en la **segunda llamada** se valida el duplicado consultando la base de datos.
+Así queda más claro: en la **primera llamada** se hace el insert, y en la **segunda llamada** se valida el duplicado consultando la base de datos.
 
 #### Actividades con el uso de BD H2
 
@@ -284,7 +284,7 @@ public class RegistryIT {
 2. Aplica el formato **AAA (Arrange – Act – Assert)** en cada test.
 3. Añade aserciones que verifiquen la persistencia real con H2.
 
-#### 💡 Reto adicional con el uso de BD H2
+#### Reto adicional con el uso de BD H2
 
 Simula un error de conexión y observa cómo responde tu caso de uso. `Registry` traduce el fallo de infraestructura a una `RegistryPersistenceException`, de modo que la capa de entrega puede decidir el código HTTP sin conocer JDBC. Verifíquelo con un mock:
 
@@ -301,7 +301,7 @@ Este escenario es prácticamente imposible de provocar con una base de datos rea
 
 Cuando no se desea usar una base de datos real, podemos **simular el repositorio** con Mockito.
 
-> ⚠️ **Ojo con el nombre: esto NO es una prueba de integración.** Si todos los colaboradores están simulados, no se está integrando nada — es una prueba **unitaria** del caso de uso. La distinción importa porque las dos responden preguntas diferentes:
+> **Ojo con el nombre: esto NO es una prueba de integración.** Si todos los colaboradores están simulados, no se está integrando nada — es una prueba **unitaria** del caso de uso. La distinción importa porque las dos responden preguntas diferentes:
 >
 > | | `RegistryWithMockTest` (unitaria) | `RegistryIT` (integración) |
 > |---|---|---|
@@ -403,7 +403,7 @@ public class RegistryWithMockTest {
 - `assertEquals(...)`: validamos que el `Registry` responde `DUPLICATED`.
 - `verify(...)`: asegura que nunca se llamó a `repo.save(...)` → es decir, no intentó grabar un duplicado.
 
-👉 Aquí no usamos BD real, sino un **mock** para aislar la prueba a la interacción con el repositorio.
+Aquí no usamos BD real, sino un **mock** para aislar la prueba a la interacción con el repositorio.
 
 #### Actividades con Mockito
 
@@ -411,7 +411,7 @@ public class RegistryWithMockTest {
 2. Implementa un mock que simule una excepción SQL y verifica que tu caso de uso la maneje correctamente.
 3. Usa `verify(repo).save(...)` para confirmar la interacción esperada.
 
-#### 💡 Reto adicional con Mocks
+#### Reto adicional con Mocks
 
 Crea una versión **FakeRepository** que guarde los datos en una `HashMap` en memoria sin usar Mockito.
 
@@ -467,7 +467,7 @@ Conclusión para el taller: **el mismo SQL no es portable**. Es exactamente el t
     </dependency>
 ```
 
-> ⚠️ **Prerrequisito**: Docker debe estar corriendo. Es el único punto del taller que lo exige. Verifíquelo con `docker version` antes de continuar.
+> **Prerrequisito**: Docker debe estar corriendo. Es el único punto del taller que lo exige. Verifíquelo con `docker version` antes de continuar.
 
 #### Ejemplo base: `RegistryRepositoryPostgresIT`
 
@@ -534,10 +534,10 @@ Imagine que la Registraduría deja de responder texto plano y empieza a responde
 
 | Prueba | ¿Detecta el cambio? | Por qué |
 |---|---|---|
-| `RegistryWithMockTest` (mock) | ❌ No | El mock responde lo que usted le dijo, no lo que responde el servicio real |
-| `RegistryIT` (H2) | ❌ No | No pasa por HTTP |
-| `RegistryControllerIT` (sistema) | ❌ No | Verifica al proveedor **contra sí mismo**; si actualiza la prueba junto con el código, sigue verde |
-| Pruebas del consumidor | ⚠️ Sí, pero tarde | En su propio pipeline, o peor: en producción |
+| `RegistryWithMockTest` (mock) | No | El mock responde lo que usted le dijo, no lo que responde el servicio real |
+| `RegistryIT` (H2) | No | No pasa por HTTP |
+| `RegistryControllerIT` (sistema) | No | Verifica al proveedor **contra sí mismo**; si actualiza la prueba junto con el código, sigue verde |
+| Pruebas del consumidor | Sí, pero tarde | En su propio pipeline, o peor: en producción |
 
 Ese es el problema real de los sistemas distribuidos: **cada equipo prueba su parte y todas pasan, pero el sistema completo está roto**. La respuesta tradicional —levantar todos los servicios y probarlos juntos— es lenta, frágil y no escala.
 
@@ -554,7 +554,7 @@ Los dos servicios nunca se levantan al mismo tiempo. Cada equipo corre su parte 
 
 El enunciado de la Registraduría siempre mencionó que *"se generarán los certificados electorales de aquellas personas cuyo voto sea válido"*, pero ese servicio nunca existió. Ahora sí: `edu.unisabana.tyvs.certificados` es un servicio que pide a la Registraduría registrar un votante y emite el certificado solo si la respuesta es `VALID`.
 
-> 📌 En un proyecto real, `certificados` viviría en **otro repositorio, con otro despliegue y otro equipo**. Aquí convive con el proveedor solo para que el taller quepa en un proyecto. Lo que importa es que el consumidor no conoce ni la base de datos ni las reglas de negocio de la Registraduría: **solo su contrato HTTP**.
+> En un proyecto real, `certificados` viviría en **otro repositorio, con otro despliegue y otro equipo**. Aquí convive con el proveedor solo para que el taller quepa en un proyecto. Lo que importa es que el consumidor no conoce ni la base de datos ni las reglas de negocio de la Registraduría: **solo su contrato HTTP**.
 
 #### Lado consumidor
 
@@ -692,7 +692,7 @@ public class RegistryControllerIT {
 2. Usa Postman o curl para verificar los endpoints `/register` y documenta tus observaciones.
 3. Implementa una prueba negativa (JSON incompleto o tipo incorrecto).
 
-#### 💡 Reto adicional con Sistemas
+#### Reto adicional con Sistemas
 
 Agrega validaciones con `@Valid` en el `PersonDTO` y prueba que el sistema devuelva errores HTTP adecuados (`400`, `409`, `422`).
 
@@ -712,7 +712,7 @@ mvn test
 mvn verify
 ```
 
-> ⚠️ `mvn test` **no ejecuta los `*IT.java`**. Si usa `test` para verificar su trabajo verá `BUILD SUCCESS` sin haber probado ninguna integración. Para eso está `verify`.
+> `mvn test` **no ejecuta los `*IT.java`**. Si usa `test` para verificar su trabajo verá `BUILD SUCCESS` sin haber probado ninguna integración. Para eso está `verify`.
 
 Reporte de cobertura **combinado** (unitarias + integración) con JaCoCo:
 
@@ -730,7 +730,7 @@ El `pom.xml` declara las cuatro ejecuciones de JaCoCo (`prepare-agent`, `report`
 - Ejecuta las pruebas de integración en cada commit con CI (GitHub Actions, Jenkins, GitLab CI).
 - Rechaza merges si `mvn verify` falla.
 
-🎓 Esta guía presenta el proceso para la creación y configuración de flujos de Integración Continua (CI) utilizando GitHub Actions.
+Esta guía presenta el proceso para la creación y configuración de flujos de Integración Continua (CI) utilizando GitHub Actions.
 Puedes consultarla en el siguiente enlace: [**Taller de Integración Continua en GitHub**](https://github.com/CesarAVegaF312/DAYS-Integracion_continua/tree/main/github).
 
 ---
@@ -880,7 +880,7 @@ Incluye **enlaces al código** (`Registry.java`, `RegistryController.java`, test
 
 ---
 
-## 🧭 Propósito del taller
+## Propósito del taller
 
 En este taller aplicamos distintas estrategias de **pruebas de integración y sistema** que permiten validar el correcto funcionamiento del software **más allá de las clases individuales**, garantizando la comunicación entre capas, la persistencia de datos y el comportamiento de los endpoints.
 
@@ -889,7 +889,7 @@ El propósito es que los estudiantes comprendan cómo **verificar la interacció
 
 ---
 
-## 🧩 Cómo usar esta guía para tu proyecto
+## Cómo usar esta guía para tu proyecto
 
 1. **Analiza la arquitectura base:** revisa cómo se comunican las capas (`domain`, `application`, `infrastructure`, `delivery`) y cómo se aislan las dependencias.
 2. **Ejecuta las pruebas de integración reales (con H2):** valida la persistencia y reglas del dominio con datos reales.
@@ -905,7 +905,7 @@ El propósito es que los estudiantes comprendan cómo **verificar la interacció
 
 ---
 
-> 🎯 **Resultado esperado:**
+> **Resultado esperado:**
 > Al finalizar este taller, cada estudiante o equipo contará con un proyecto con **pruebas de integración y sistema completas**, validando correctamente la interacción entre componentes, con una **cobertura mínima del 80%** y documentación clara que refleje la aplicación práctica de los conceptos de **Testing de Integración, Mockito, Arquitectura Limpia y Pruebas de Sistema (HTTP)**.
 
 ---
