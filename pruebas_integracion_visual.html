@@ -1,0 +1,1171 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Complemento visual interactivo del taller de pruebas de integracion y sistema sobre el proyecto Registraduria.">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>La frontera de cada prueba</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#ECEFF4; --surface:#FBFCFE; --sunk:#DFE4EC;
+  --ink:#141A24; --ink-2:#38424F; --muted:#68717F; --line:#D5DBE4; --line-2:#BEC6D2;
+  --real:#17518F; --doble:#9A2E63; --fuera:#8A93A1;
+  --real-soft:#DDE8F6; --doble-soft:#F7E3EC; --fuera-soft:#E5E9EF;
+  --ok:#1B6B4C; --warn:#8B5E12; --bad:#A5342D; --neutral:#4F5967;
+  --ok-soft:#DCEEE5; --warn-soft:#F6EBD5; --bad-soft:#F8E1DF; --neutral-soft:#E3E7ED;
+  --shadow:0 1px 2px rgba(20,26,36,.05), 0 12px 28px -20px rgba(20,26,36,.45);
+  --fd:'Archivo','Segoe UI',system-ui,sans-serif;
+  --fb:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+  --fm:'IBM Plex Mono','Cascadia Mono',Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#11161F; --surface:#19202A; --sunk:#212934;
+    --ink:#E4EAF2; --ink-2:#B9C3D0; --muted:#8A94A2; --line:#2A3441; --line-2:#3B4756;
+    --real:#6FA8E8; --doble:#E68CB5; --fuera:#79828F;
+    --real-soft:#152840; --doble-soft:#331825; --fuera-soft:#222A34;
+    --ok:#4FAD82; --warn:#CF9A44; --bad:#E2776E; --neutral:#98A2B0;
+    --ok-soft:#112A20; --warn-soft:#2C2211; --bad-soft:#2F1614; --neutral-soft:#242C36;
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 12px 28px -20px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#11161F; --surface:#19202A; --sunk:#212934;
+  --ink:#E4EAF2; --ink-2:#B9C3D0; --muted:#8A94A2; --line:#2A3441; --line-2:#3B4756;
+  --real:#6FA8E8; --doble:#E68CB5; --fuera:#79828F;
+  --real-soft:#152840; --doble-soft:#331825; --fuera-soft:#222A34;
+  --ok:#4FAD82; --warn:#CF9A44; --bad:#E2776E; --neutral:#98A2B0;
+  --ok-soft:#112A20; --warn-soft:#2C2211; --bad-soft:#2F1614; --neutral-soft:#242C36;
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 12px 28px -20px rgba(0,0,0,.9);
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--fb);font-size:16.5px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;padding:0 20px 70px}
+.wrap{max-width:1080px;margin:0 auto}
+h1,h2,h3,h4{font-family:var(--fd);text-wrap:balance;margin:0;line-height:1.15;letter-spacing:-.014em}
+p{margin:0}
+code{font-family:var(--fm);font-size:.86em}
+a{color:var(--real)}
+.eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.mono{font-family:var(--fm)}
+
+header.hero{padding:54px 0 34px;border-bottom:1px solid var(--line)}
+.hero h1{font-size:clamp(36px,6.2vw,62px);font-weight:700;max-width:16ch;margin-top:14px}
+.hero h1 em{font-style:normal;color:var(--real)}
+.hero .sub{margin-top:20px;max-width:64ch;font-size:18.5px;color:var(--ink-2)}
+.thesis{margin-top:24px;border-left:3px solid var(--doble);padding:3px 0 3px 18px;max-width:60ch;font-size:18.5px}
+.key{margin-top:30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--surface)}
+.key>div{padding:14px 17px;border-right:1px solid var(--line)}
+.key>div:last-child{border-right:0}
+.key b{font-family:var(--fd);font-size:14.5px;display:flex;align-items:center;gap:9px;font-weight:600}
+.key .dot{width:14px;height:14px;border-radius:2px;flex:none;border:2px solid}
+.key p{font-size:14px;color:var(--muted);margin-top:4px;line-height:1.45}
+
+section.lab{padding:52px 0;border-bottom:1px solid var(--line)}
+.lab-head{display:flex;gap:15px;align-items:baseline}
+.lab-num{font-family:var(--fm);font-size:12px;font-weight:600;color:var(--doble);letter-spacing:.08em;flex:none}
+.lab h2{font-size:clamp(24px,3.3vw,33px);font-weight:600}
+.lab .lede{max-width:66ch;margin-top:13px;color:var(--ink-2)}
+.stage{margin-top:26px;background:var(--surface);border:1px solid var(--line);border-radius:4px;
+  box-shadow:var(--shadow);overflow:hidden}
+.stage-body{padding:20px;min-width:0}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 300px}
+.split>.rail{border-left:1px solid var(--line);padding:19px;background:var(--sunk);min-width:0}
+@media (max-width:880px){.split{grid-template-columns:1fr}.split>.rail{border-left:0;border-top:1px solid var(--line)}}
+
+.ctl{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:11px 17px;border-bottom:1px solid var(--line);background:var(--sunk)}
+button{font-family:var(--fd);font-size:13.5px;font-weight:600;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:3px;padding:6px 12px;cursor:pointer;line-height:1.25}
+button:hover:not(:disabled){border-color:var(--ink-2)}
+button:disabled{opacity:.35;cursor:default}
+button.primary{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+button.on{background:var(--real);border-color:var(--real);color:#fff}
+:root[data-theme="dark"] button.on{color:#0C121A}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) button.on{color:#0C121A}}
+:focus-visible{outline:2px solid var(--doble);outline-offset:2px}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:3px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;border-radius:0;border-right:1px solid var(--line-2)}
+.seg button:last-child{border-right:0}
+.count{font-family:var(--fm);font-size:12px;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
+.ctl label{font-family:var(--fm);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px}
+
+.rail h4{font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+  font-weight:500;margin-bottom:10px}
+.rail-block+.rail-block{margin-top:22px}
+.narration{font-size:14.8px;color:var(--ink-2);line-height:1.5}
+.narration b{color:var(--ink);font-weight:600}
+.pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--fm);font-size:11.5px;font-weight:500;
+  padding:3px 8px;border-radius:2px;border:1px solid var(--line-2);color:var(--muted);background:var(--surface)}
+.pill.real{color:var(--real);border-color:var(--real);background:var(--real-soft)}
+.pill.doble{color:var(--doble);border-color:var(--doble);background:var(--doble-soft)}
+.pill.fuera{color:var(--fuera);border-color:var(--line-2);background:var(--fuera-soft)}
+.pill.ok{color:var(--ok);border-color:var(--ok);background:var(--ok-soft)}
+.pill.warn{color:var(--warn);border-color:var(--warn);background:var(--warn-soft)}
+.pill.bad{color:var(--bad);border-color:var(--bad);background:var(--bad-soft)}
+.pill.neutral{color:var(--neutral);border-color:var(--line-2);background:var(--neutral-soft)}
+
+figure{margin:0}
+figcaption{font-size:14.5px;color:var(--muted);margin-top:12px;line-height:1.5;max-width:74ch}
+.scroller{overflow-x:auto;padding-bottom:4px}
+pre{font-family:var(--fm);font-size:12.8px;line-height:1.62;background:var(--sunk);border:1px solid var(--line);
+  border-radius:3px;padding:13px 15px;overflow-x:auto;margin:0;color:var(--ink-2)}
+pre span{display:block;padding:0 4px;margin:0 -4px;border-radius:2px}
+pre span.hi{background:var(--real-soft);color:var(--ink);font-weight:500;box-shadow:inset 2px 0 0 var(--real)}
+.note{margin-top:24px;padding:15px 18px;background:var(--real-soft);border:1px solid var(--real);
+  border-radius:3px;font-size:15.5px;max-width:78ch;color:var(--ink)}
+.note.warn{background:var(--warn-soft);border-color:var(--warn)}
+.note.doble{background:var(--doble-soft);border-color:var(--doble)}
+.note b{font-family:var(--fd)}
+
+.diag{width:100%;height:auto;color:var(--ink)}
+.node rect{fill:var(--surface);stroke:var(--line-2);stroke-width:1.5;transition:fill .25s,stroke .25s}
+.node .t{font-family:var(--fd);font-size:13px;font-weight:600;fill:var(--muted)}
+.node .s{font-family:var(--fm);font-size:10px;fill:var(--muted)}
+.node[data-state="real"] rect{fill:var(--real-soft);stroke:var(--real);stroke-width:2}
+.node[data-state="real"] .t{fill:var(--ink)}
+.node[data-state="real"] .s{fill:var(--real)}
+.node[data-state="doble"] rect{fill:var(--doble-soft);stroke:var(--doble);stroke-width:2;stroke-dasharray:6 3}
+.node[data-state="doble"] .t{fill:var(--ink)}
+.node[data-state="doble"] .s{fill:var(--doble)}
+.node[data-state="fuera"]{opacity:.28}
+.edge{fill:none;stroke:var(--fuera);stroke-width:1.6;marker-end:url(#ah-fuera);transition:stroke .25s,opacity .25s}
+.edge[data-state="real"]{stroke:var(--real);stroke-width:2.2;marker-end:url(#ah-real)}
+.edge[data-state="doble"]{stroke:var(--doble);stroke-width:2.2;stroke-dasharray:6 3;marker-end:url(#ah-doble)}
+.edge[data-state="fuera"]{opacity:.24}
+.elbl{font-family:var(--fm);font-size:10px;fill:var(--muted);transition:opacity .25s}
+.elbl[data-state="fuera"]{opacity:.24}
+.elbl[data-state="real"]{fill:var(--real)}
+.elbl[data-state="doble"]{fill:var(--doble)}
+.port line{stroke:var(--line-2);stroke-width:1.4;stroke-dasharray:3 3}
+.port text{font-family:var(--fm);font-size:10px;fill:var(--muted)}
+
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font-family:var(--fb);font-size:12.5px;font-weight:500;padding:4px 10px;border-radius:12px;
+  border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);cursor:pointer}
+.chip:hover{border-color:var(--ink-2);color:var(--ink)}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(126px,1fr));gap:11px;margin-top:16px}
+.form label{display:block;font-family:var(--fm);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:4px}
+.form input,.form select{font-family:var(--fm);font-size:13px;padding:6px 8px;border:1px solid var(--line-2);
+  border-radius:3px;background:var(--surface);color:var(--ink);width:100%}
+.panes{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:18px;margin-top:20px}
+@media (max-width:700px){.panes{grid-template-columns:1fr}}
+h5{font-family:var(--fm);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);
+  font-weight:500;margin:0 0 8px}
+.trace{font-family:var(--fm);font-size:12.4px;line-height:1.55;border:1px solid var(--line);border-radius:3px;
+  background:var(--sunk);overflow:hidden}
+.trace div{padding:4px 10px;border-left:3px solid transparent;color:var(--muted);white-space:pre;overflow-x:auto}
+.trace div.pass{color:var(--ink-2);border-left-color:var(--line-2)}
+.trace div.hit{color:var(--ink);background:var(--bad-soft);border-left-color:var(--bad);font-weight:500}
+.trace div.run{color:var(--ink);background:var(--ok-soft);border-left-color:var(--ok);font-weight:500}
+.trace div.skip{opacity:.42}
+table{border-collapse:collapse;width:100%;font-size:13px}
+.tbl th{font-family:var(--fm);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+  text-align:left;font-weight:500;padding:6px 9px;border-bottom:1px solid var(--line-2)}
+.tbl td{font-family:var(--fm);padding:6px 9px;border-bottom:1px solid var(--line);color:var(--ink-2);
+  font-variant-numeric:tabular-nums}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tr.fresh td{background:var(--ok-soft);color:var(--ink)}
+.empty{font-family:var(--fm);font-size:12.5px;color:var(--muted);padding:12px 10px;border:1px dashed var(--line-2);
+  border-radius:3px;text-align:center}
+.log{font-family:var(--fm);font-size:12.2px;line-height:1.5;color:var(--ink-2);margin-top:12px}
+.log div{padding:3px 0;border-bottom:1px solid var(--line)}
+.log div:last-child{border-bottom:0}
+.log .r{color:var(--muted)}
+.result{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.result b{font-family:var(--fd);font-size:25px;font-weight:700;letter-spacing:-.02em}
+.result.ok b{color:var(--ok)} .result.bad b{color:var(--bad)}
+.result.warn b{color:var(--warn)} .result.neutral b{color:var(--neutral)}
+
+.matrix th{font-family:var(--fm);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+  text-align:left;font-weight:500;padding:8px 8px;border-bottom:1px solid var(--line-2)}
+.matrix td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.matrix tr{cursor:pointer}
+.matrix tr:hover td{background:var(--sunk)}
+.matrix tr.sel td{background:var(--real-soft)}
+.matrix tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--real)}
+.matrix td:first-child{font-size:13.5px;color:var(--ink)}
+.matrix td .w{display:block;font-family:var(--fm);font-size:10.5px;color:var(--muted);margin-top:2px}
+.verdicts{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:20px}
+.verdict{border:1px solid var(--line);border-radius:3px;padding:12px 14px;background:var(--sunk)}
+.verdict h6{font-family:var(--fm);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+  font-weight:500;margin:0 0 8px}
+.verdict p{font-size:13.5px;color:var(--ink-2);line-height:1.45;margin-top:8px}
+
+.engines{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}
+@media (max-width:700px){.engines{grid-template-columns:1fr}}
+.engine{border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--sunk)}
+.engine header{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;
+  border-bottom:1px solid var(--line);background:var(--surface)}
+.engine header b{font-family:var(--fd);font-size:14px}
+.engine .out{font-family:var(--fm);font-size:12.6px;padding:13px;line-height:1.55}
+.engine .out .res{font-weight:600}
+.engine .out .why{color:var(--muted);margin-top:4px;display:block}
+.engine.err .out .res{color:var(--bad)}
+.engine.ok .out .res{color:var(--ok)}
+
+.phases{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:20px}
+.phase{font-family:var(--fm);font-size:12px;padding:5px 11px;border:1px solid var(--line-2);border-radius:3px;
+  color:var(--muted);background:var(--surface);transition:all .2s}
+.phase.on{border-color:var(--real);background:var(--real-soft);color:var(--ink);font-weight:500}
+.phases .arw{color:var(--muted);font-size:12px}
+.files{display:grid;gap:8px}
+.file{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:9px 13px;border:1px solid var(--line);
+  border-radius:3px;background:var(--sunk);transition:opacity .2s,border-color .2s}
+.file.off{opacity:.36}
+.file.on{border-color:var(--real)}
+.file .fn{font-family:var(--fm);font-size:12.6px;color:var(--ink);flex:1;min-width:210px}
+.file .fp{font-family:var(--fm);font-size:11px;color:var(--muted)}
+footer{padding:44px 0 0;color:var(--muted);font-size:15px;max-width:74ch}
+footer p+p{margin-top:12px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <p class="eyebrow">Complemento visual &middot; Pruebas y validación de software</p>
+  <h1>La frontera de <em>cada prueba</em></h1>
+  <p class="sub">La guía escrita del taller explica cómo escribir cada prueba. Esta página muestra lo que esa
+  guía no puede dibujar: hasta dónde llega cada una, qué código se ejecuta de verdad, qué queda reemplazado
+  por un doble y qué defectos pasan por debajo sin que nadie los vea.</p>
+  <p class="thesis">Una prueba no vale por lo que afirma, sino por lo que ejecuta. Cambiar H2 por un mock no
+  hace la prueba «más limpia»: le mueve la frontera, y con ella el conjunto de defectos que puede atrapar.</p>
+  <div class="key">
+    <div><b><span class="dot" style="border-color:var(--real);background:var(--real-soft)"></span>Código real</b>
+      <p>Se compila y se ejecuta durante la prueba. Si tiene un defecto, la prueba puede verlo.</p></div>
+    <div><b><span class="dot" style="border-color:var(--doble);background:var(--doble-soft);border-style:dashed"></span>Doble de prueba</b>
+      <p>Un mock ocupa el lugar del componente. Responde lo que usted programó: su código real no corre.</p></div>
+    <div><b><span class="dot" style="border-color:var(--line-2);background:var(--fuera-soft)"></span>Fuera del alcance</b>
+      <p>Ni se instancia. Cualquier defecto que viva ahí es invisible para esta prueba.</p></div>
+  </div>
+</header>
+
+<!-- ============ 01 ============ -->
+<section class="lab">
+  <div class="lab-head"><span class="lab-num">01</span>
+    <h2>Cinco pruebas, cinco fronteras</h2></div>
+  <p class="lede">El proyecto <code>registraduria</code> es el mismo en los cinco casos. Lo que cambia es dónde
+  entra la prueba y dónde se corta la cadena. Cambie de modo y mire qué cajas se encienden: esa es la
+  definición operativa de cada técnica del taller, mucho más útil que la de diccionario.</p>
+
+  <div class="stage">
+    <div class="ctl">
+      <span class="seg" id="scopeSeg">
+        <button data-mode="mock" class="on">Unitaria con mock</button>
+        <button data-mode="h2">Integración con H2</button>
+        <button data-mode="pg">Testcontainers</button>
+        <button data-mode="http">Sistema por HTTP</button>
+        <button data-mode="pact">Contrato con Pact</button>
+      </span>
+      <span class="count" id="scopeCount"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <figure>
+          <div class="scroller">
+          <svg class="diag" id="scopeSvg" viewBox="0 0 952 412" role="img"
+               aria-label="Diagrama de las capas del proyecto registraduria mostrando qué componentes ejecuta cada tipo de prueba.">
+            <defs>
+              <marker id="ah-real" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="7" markerHeight="6" orient="auto-start-reverse">
+                <polygon points="0,0 10,4 0,8" style="fill:var(--real)"></polygon></marker>
+              <marker id="ah-doble" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="7" markerHeight="6" orient="auto-start-reverse">
+                <polygon points="0,0 10,4 0,8" style="fill:var(--doble)"></polygon></marker>
+              <marker id="ah-fuera" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="7" markerHeight="6" orient="auto-start-reverse">
+                <polygon points="0,0 10,4 0,8" style="fill:var(--fuera)"></polygon></marker>
+            </defs>
+
+            <g class="node" id="n-pacto"><rect x="16" y="34" width="190" height="54" rx="3"></rect>
+              <text class="t" x="111" y="57" text-anchor="middle">el pacto</text>
+              <text class="s" x="111" y="74" text-anchor="middle">certificados-registraduria.json</text></g>
+            <g class="node" id="n-in"><rect x="16" y="176" width="190" height="54" rx="3"></rect>
+              <text class="t" x="111" y="199" text-anchor="middle" id="n-in-t">RegistryWithMockTest</text>
+              <text class="s" x="111" y="216" text-anchor="middle" id="n-in-s">src/test &middot; Mockito</text></g>
+
+            <g class="node" id="n-ctrl"><rect x="286" y="34" width="190" height="54" rx="3"></rect>
+              <text class="t" x="381" y="57" text-anchor="middle">RegistryController</text>
+              <text class="s" x="381" y="74" text-anchor="middle">delivery/rest &middot; JSON</text></g>
+            <g class="node" id="n-reg"><rect x="286" y="176" width="190" height="54" rx="3"></rect>
+              <text class="t" x="381" y="199" text-anchor="middle">Registry</text>
+              <text class="s" x="381" y="216" text-anchor="middle">application/usecase</text></g>
+
+            <g class="node" id="n-repo"><rect x="556" y="176" width="190" height="54" rx="3"></rect>
+              <text class="t" x="651" y="199" text-anchor="middle">RegistryRepository</text>
+              <text class="s" x="651" y="216" text-anchor="middle">infrastructure &middot; JDBC</text></g>
+            <g class="node" id="n-mock"><rect x="556" y="316" width="190" height="54" rx="3"></rect>
+              <text class="t" x="651" y="339" text-anchor="middle">mock(Port)</text>
+              <text class="s" x="651" y="356" text-anchor="middle">Mockito</text></g>
+
+            <g class="node" id="n-h2"><rect x="766" y="176" width="170" height="54" rx="3"></rect>
+              <text class="t" x="851" y="199" text-anchor="middle">H2 en memoria</text>
+              <text class="s" x="851" y="216" text-anchor="middle">jdbc:h2:mem:...</text></g>
+            <g class="node" id="n-pg"><rect x="766" y="316" width="170" height="54" rx="3"></rect>
+              <text class="t" x="851" y="339" text-anchor="middle">PostgreSQL 16</text>
+              <text class="s" x="851" y="356" text-anchor="middle">contenedor Docker</text></g>
+
+            <path class="edge" id="e-pacto-in" d="M 111,88 L 111,168"></path>
+            <text class="elbl" id="l-pacto-in" x="121" y="132" text-anchor="start">lo verifica</text>
+            <path class="edge" id="e-in-ctrl" d="M 206,190 L 246,190 L 246,61 L 278,61"></path>
+            <text class="elbl" id="l-in-ctrl" x="256" y="120" text-anchor="start">POST /register</text>
+            <path class="edge" id="e-in-reg" d="M 206,212 L 278,212"></path>
+            <text class="elbl" id="l-in-reg" x="242" y="203" text-anchor="middle">registerVoter</text>
+            <path class="edge" id="e-ctrl-reg" d="M 381,88 L 381,168"></path>
+            <text class="elbl" id="l-ctrl-reg" x="391" y="132" text-anchor="start">registerVoter</text>
+            <path class="edge" id="e-reg-repo" d="M 476,203 L 548,203"></path>
+            <text class="elbl" id="l-reg-repo" x="512" y="186" text-anchor="middle">existsById()</text>
+            <text class="elbl" id="l-reg-repo2" x="512" y="174" text-anchor="middle">save()</text>
+            <path class="edge" id="e-reg-mock" d="M 340,230 L 340,343 L 548,343"></path>
+            <text class="elbl" id="l-reg-mock" x="352" y="335" text-anchor="start">respuesta programada</text>
+            <path class="edge" id="e-repo-h2" d="M 746,203 L 758,203"></path>
+            <text class="elbl" id="l-repo-h2" x="756" y="186" text-anchor="middle">SELECT / INSERT</text>
+            <path class="edge" id="e-repo-pg" d="M 651,230 L 651,343 L 758,343"></path>
+            <text class="elbl" id="l-repo-pg" x="663" y="335" text-anchor="start">el mismo SQL</text>
+
+            <g class="port"><line x1="516" y1="212" x2="516" y2="252"></line>
+              <text x="516" y="268" text-anchor="middle">RegistryRepositoryPort</text></g>
+          </svg>
+          </div>
+          <figcaption id="scopeCap"></figcaption>
+        </figure>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué se está ejecutando</h4>
+          <p class="narration" id="scopeNarr"></p></div>
+        <div class="rail-block"><h4>Punto ciego</h4>
+          <p class="narration" id="scopeBlind"></p></div>
+        <div class="rail-block"><h4>Archivo</h4>
+          <p class="narration mono" style="font-size:12.4px" id="scopeFile"></p></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>El puerto es la bisagra.</b> <code>RegistryRepositoryPort</code> existe para que
+  <code>Registry</code> no sepa si al otro lado hay JDBC, un contenedor de PostgreSQL o un objeto de Mockito.
+  Sin esa interfaz, la prueba con mock no sería posible: habría que levantar una base de datos incluso para
+  verificar que un menor de edad no puede votar.</p>
+</section>
+
+<!-- ============ 02 ============ -->
+<section class="lab">
+  <div class="lab-head"><span class="lab-num">02</span>
+    <h2>El banco de pruebas: <code>registerVoter</code> en vivo</h2></div>
+  <p class="lede">Esta es la lógica real de <code>Registry.registerVoter</code>, con sus guardas en el orden en
+  que están escritas hoy en el repositorio. Registre personas y vea tres cosas a la vez: por dónde salió la
+  ejecución, qué le pasó a la tabla <code>registry</code> y qué aserción tendría que escribir para dejar ese
+  caso probado. Los escenarios de arriba son las clases de equivalencia que pide el taller.</p>
+
+  <div class="stage">
+    <div class="ctl">
+      <span class="seg" id="benchSeg">
+        <button data-mode="h2" class="on">Repositorio real (H2)</button>
+        <button data-mode="mock">Doble con Mockito</button>
+      </span>
+      <label id="stubWrap" hidden><input type="checkbox" id="stubExists"> when(existsById).thenReturn(true)</label>
+      <button id="benchClear">Vaciar tabla</button>
+      <span class="count" id="benchCount"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <div class="chips" id="benchChips"></div>
+        <div class="form">
+          <div><label for="fName">name</label><input type="text" id="fName" value="Ana"></div>
+          <div><label for="fId">id</label><input type="number" id="fId" value="100"></div>
+          <div><label for="fAge">age</label><input type="number" id="fAge" value="30"></div>
+          <div><label for="fGender">gender</label><select id="fGender"><option>FEMALE</option><option>MALE</option></select></div>
+          <div><label for="fAlive">alive</label><select id="fAlive"><option value="true">true</option><option value="false">false</option></select></div>
+          <div style="display:flex;align-items:flex-end"><button class="primary" id="benchRun" style="width:100%">registerVoter(p)</button></div>
+        </div>
+        <div class="panes">
+          <div>
+            <h5>Camino de ejecución</h5>
+            <div class="trace" id="benchTrace"></div>
+          </div>
+          <div>
+            <h5 id="benchStoreTitle">Tabla registry en H2</h5>
+            <div id="benchStore"></div>
+            <div class="log" id="benchLog"></div>
+          </div>
+        </div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Resultado</h4>
+          <p class="result" id="benchResult"></p>
+          <p class="narration" id="benchNarr" style="margin-top:10px"></p></div>
+        <div class="rail-block"><h4>La prueba que faltaría escribir</h4>
+          <pre id="benchTest"></pre></div>
+      </div>
+    </div>
+  </div>
+  <p class="note warn"><b>El orden de las guardas es parte del contrato.</b> Pruebe «edad imposible»:
+  una edad de <code>-1</code> devuelve <code>INVALID_AGE</code> y no <code>UNDERAGE</code>, porque el rango
+  biológico se evalúa antes. La diferencia no es cosmética: a un menor de edad se le dice que espere, y a un
+  registro con la edad mal capturada, que lo corrija. Y una persona de 15 años fallecida devuelve
+  <code>DEAD</code>, porque <code>!p.isAlive()</code> corta antes que las dos guardas de edad.</p>
+</section>
+
+<!-- ============ 03 ============ -->
+<section class="lab">
+  <div class="lab-head"><span class="lab-num">03</span>
+    <h2>La misma persona, por cuatro caminos</h2></div>
+  <p class="lede">Avance paso a paso y compare: con H2 hay SQL de verdad y la aserción final vuelve a consultar
+  la base; con el mock no hay una sola sentencia SQL y la aserción es sobre una <em>interacción</em>; por HTTP
+  la prueba ni siquiera nombra a <code>Registry</code>; y con Pact la prueba del consumidor ni siquiera sabe
+  que la Registraduría tiene base de datos. El código de la derecha es el de los tests reales del repositorio.</p>
+
+  <div class="stage">
+    <div class="ctl">
+      <span class="seg" id="seqSeg">
+        <button data-flow="h2" class="on">RegistryIT (H2)</button>
+        <button data-flow="mock">Con Mockito</button>
+        <button data-flow="http">Sistema por HTTP</button>
+        <button data-flow="pact">El contrato</button>
+      </span>
+      <button data-act="reset" id="seqReset">Reiniciar</button>
+      <button data-act="prev" id="seqPrev">Atrás</button>
+      <button data-act="next" id="seqNext" class="primary">Adelante</button>
+      <span class="count" id="seqCount"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <figure>
+          <div class="scroller"><svg class="diag" id="seqSvg" role="img" aria-label="Diagrama de secuencia de la prueba seleccionada."></svg></div>
+          <figcaption id="seqCap"></figcaption>
+        </figure>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Paso actual</h4><p class="narration" id="seqNarr" style="min-height:5.6em"></p></div>
+        <div class="rail-block"><h4>Código de la prueba</h4><pre id="seqCode"></pre></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 04 ============ -->
+<section class="lab">
+  <div class="lab-head"><span class="lab-num">04</span>
+    <h2>H2 no es PostgreSQL</h2></div>
+  <p class="lede">El taller lo mide en vez de afirmarlo: el mismo <code>CREATE TABLE</code> y la misma consulta
+  dan resultados distintos en los dos motores. La causa es que el estándar SQL dice que los identificadores sin
+  comillas se pliegan a una caja, pero no dice a cuál. Ejecute cada sentencia y vea qué contesta cada uno.</p>
+
+  <div class="stage">
+    <div class="ctl">
+      <span class="seg" id="sqlSeg"></span>
+      <span class="count" id="sqlCount"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <pre id="sqlStmt"></pre>
+        <div class="engines">
+          <div class="engine" id="engH2">
+            <header><b>H2</b><span class="pill">pliega a MAYÚSCULAS</span></header>
+            <div class="out"></div>
+          </div>
+          <div class="engine" id="engPg">
+            <header><b>PostgreSQL</b><span class="pill">pliega a minúsculas</span></header>
+            <div class="out"></div>
+          </div>
+        </div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué acaba de pasar</h4><p class="narration" id="sqlNarr"></p></div>
+        <div class="rail-block"><h4>La tabla, por dentro</h4>
+          <p class="narration mono" style="font-size:12.6px" id="sqlCols"></p></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>El mismo SQL no es portable.</b> Este es exactamente el tipo de defecto que
+  <code>RegistryIT</code> nunca va a encontrar, porque para H2 el código está bien. Por eso el taller agrega
+  <code>RegistryRepositoryPostgresIT</code>: no reemplaza a H2, cubre lo que H2 no puede ver. El precio es
+  Docker y unos segundos por ejecución.</p>
+</section>
+
+<!-- ============ 05 ============ -->
+<section class="lab">
+  <div class="lab-head"><span class="lab-num">05</span>
+    <h2>¿Qué prueba atrapa qué defecto?</h2></div>
+  <p class="lede">Seis defectos sembrados en el código de la registraduría, contra las cinco técnicas del
+  taller. Ninguna columna gana siempre y ninguna fila la atrapan todas. Haga clic en una fila: esta tabla es el
+  borrador de la <em>matriz de pruebas</em> y del archivo <code>defectos.md</code> que hay que entregar.</p>
+
+  <div class="stage">
+    <div class="stage-body">
+      <div class="scroller">
+      <table class="matrix">
+        <thead><tr><th style="min-width:250px">Defecto sembrado</th><th>Mock</th><th>H2</th><th>Postgres</th><th>HTTP</th><th>Pact</th></tr></thead>
+        <tbody id="mxBody"></tbody>
+      </table>
+      </div>
+      <div class="verdicts" id="mxDetail"></div>
+    </div>
+  </div>
+  <p class="note"><b>Lea la tabla por columnas.</b> El mock es rapidísimo y atrapa reglas de dominio; nunca va
+  a atrapar un SQL mal escrito. H2 atrapa el SQL, pero no las diferencias de motor. Testcontainers las atrapa y
+  cuesta segundos. La prueba de sistema ve el JSON y los códigos HTTP, pero se verifica contra sí misma. Pact
+  es la única que se entera de que usted rompió a alguien más.</p>
+</section>
+
+<!-- ============ 06 ============ -->
+<section class="lab" style="border-bottom:0">
+  <div class="lab-head"><span class="lab-num">06</span>
+    <h2>El nombre del archivo decide qué se ejecuta</h2></div>
+  <p class="lede">Es la causa número uno de «en mi máquina pasaban todas»: la prueba de integración nunca
+  corrió. Surefire ejecuta <code>*Test.java</code> en la fase <code>test</code>; Failsafe ejecuta
+  <code>*IT.java</code> en <code>integration-test</code>. Cambie de comando y vea qué se ejecuta.</p>
+
+  <div class="stage">
+    <div class="ctl">
+      <span class="seg" id="mvnSeg">
+        <button data-cmd="test" class="on">mvn test</button>
+        <button data-cmd="verify">mvn verify</button>
+      </span>
+      <span class="count" id="mvnCount"></span>
+    </div>
+    <div class="split">
+      <div class="stage-body">
+        <div class="phases" id="mvnPhases"></div>
+        <div class="files" id="mvnFiles"></div>
+      </div>
+      <div class="rail">
+        <div class="rail-block"><h4>Qué pasa</h4><p class="narration" id="mvnNarr"></p></div>
+        <div class="rail-block"><h4>Configuración que lo decide</h4><pre id="mvnCode"></pre></div>
+      </div>
+    </div>
+  </div>
+  <p class="note warn"><b>El orden entre las dos fases no es casual.</b>
+  <code>CertificadoServicePactTest</code> termina en <code>Test</code> y corre con Surefire, porque es quien
+  <em>genera</em> el pacto; <code>RegistraduriaProviderPactIT</code> termina en <code>IT</code> y corre después
+  con Failsafe, porque es quien lo <em>verifica</em>. Si el consumidor no corrió antes, no hay pacto que
+  verificar.</p>
+</section>
+
+<footer>
+  <p>Complemento visual del <em>Taller de pruebas de integración y sistema</em> &mdash; proyecto
+  <code>registraduria</code>, Universidad de La Sabana.</p>
+  <p>Sugerencia de uso en clase: proyecte el laboratorio 02 en modo mock, registre la persona duplicada y deje
+  que el curso explique por qué el resultado es <code>DUPLICATED</code> aunque no exista ninguna base de datos.
+  De ahí sale sola la primera fila del laboratorio 05.</p>
+</footer>
+</div>
+
+<script>
+const $=(s,r)=>(r||document).querySelector(s);
+const $$=(s,r)=>Array.from((r||document).querySelectorAll(s));
+const SVGNS='http://www.w3.org/2000/svg';
+function el(tag,attrs,text){
+  const n=document.createElementNS(SVGNS,tag);
+  let style='';
+  for(const k in attrs){
+    const v=String(attrs[k]);
+    if(v.indexOf('var(')!==-1) style+=k+':'+v+';';
+    else n.setAttribute(k,v);
+  }
+  if(style) n.setAttribute('style',style);
+  if(text!=null) n.textContent=text;
+  return n;
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function seg(container,attr,fn){
+  const btns=$$('button',container);
+  btns.forEach(b=>b.addEventListener('click',()=>{
+    btns.forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    fn(b.dataset[attr]);
+  }));
+}
+
+/* ============================================================
+   01 - fronteras
+   ============================================================ */
+const N=['n-pacto','n-in','n-ctrl','n-reg','n-repo','n-mock','n-h2','n-pg'];
+const E=['e-pacto-in','e-in-ctrl','e-in-reg','e-ctrl-reg','e-reg-repo','e-reg-mock','e-repo-h2','e-repo-pg'];
+function st(list,vals){const o={};list.forEach((k,i)=>o[k]=vals[i]);return o;}
+const F='fuera', R='real', D='doble';
+const SCOPE={
+  mock:{
+    nodes:st(N,[F,R,F,R,F,D,F,F]),
+    edges:st(E,[F,F,R,F,F,D,F,F]),
+    in:['RegistryWithMockTest','src/test &middot; Mockito'],
+    count:'2 clases reales &middot; 1 doble &middot; 0 sentencias SQL',
+    cap:'La prueba construye <code>new Registry(mock)</code>. Solo se ejecuta la lógica de dominio; el puerto responde lo que usted programó con <code>when(...)</code>.',
+    narr:'Se ejecutan <b>la clase de prueba y <code>Registry</code></b>. En el lugar del puerto hay un objeto de Mockito que devuelve valores fijos: <code>RegistryRepository</code> nunca se instancia y no se levanta ninguna base.',
+    blind:'Todo lo que viva en el SQL, en la conexión JDBC, en el motor o en el mapeo HTTP. Si <code>existsById</code> consultara por la columna equivocada, esta prueba seguiría en verde.',
+    file:'src/test/.../application/usecase/RegistryWithMockTest.java'
+  },
+  h2:{
+    nodes:st(N,[F,R,F,R,R,F,R,F]),
+    edges:st(E,[F,F,R,F,R,F,R,F]),
+    in:['RegistryIT','src/test &middot; H2 en memoria'],
+    count:'4 clases reales &middot; 0 dobles &middot; SQL real contra H2',
+    cap:'La prueba inyecta el repositorio JDBC de verdad. Cada <code>existsById</code> es un <code>SELECT</code> y cada <code>save</code> un <code>INSERT</code> con <code>commit</code>.',
+    narr:'Se ejecuta <b>la cadena completa de aplicación e infraestructura</b>: <code>Registry</code> llama al puerto, y detrás del puerto está el <code>RegistryRepository</code> real hablando con H2 en memoria.',
+    blind:'La capa de entrega y las diferencias entre motores. <code>RegistryController</code> no se instancia, así que el JSON y los códigos HTTP quedan sin probar; y H2 no se comporta como PostgreSQL.',
+    file:'src/test/.../application/usecase/RegistryIT.java'
+  },
+  pg:{
+    nodes:st(N,[F,R,F,R,R,F,F,R]),
+    edges:st(E,[F,F,R,F,R,F,F,R]),
+    in:['RegistryRepositoryPostgresIT','src/test &middot; Testcontainers'],
+    count:'4 clases reales &middot; PostgreSQL 16 en Docker &middot; segundos',
+    cap:'El mismo código de producción, pero contra un motor real levantado en un contenedor que se destruye al terminar la prueba.',
+    narr:'Se ejecuta <b>lo mismo que con H2, cambiando el motor</b>. Testcontainers arranca <code>postgres:16-alpine</code>, la prueba corre contra él y el contenedor se elimina. Si Docker no está disponible, la clase entera se salta en vez de fallar.',
+    blind:'La capa de entrega, igual que con H2. Y cuesta segundos en vez de milisegundos: no es la prueba que uno corre cada vez que guarda un archivo.',
+    file:'src/test/.../infrastructure/persistence/RegistryRepositoryPostgresIT.java'
+  },
+  http:{
+    nodes:st(N,[F,R,R,R,R,F,R,F]),
+    edges:st(E,[F,R,F,R,R,F,R,F]),
+    in:['RegistryControllerIT','src/test &middot; @SpringBootTest'],
+    count:'5 clases reales &middot; contexto Spring completo &middot; puerto TCP',
+    cap:'<code>@SpringBootTest(webEnvironment = RANDOM_PORT)</code> levanta la aplicación entera y la prueba entra por HTTP, como lo haría un cliente externo.',
+    narr:'Se ejecuta <b>todo, incluido el arranque de Spring</b>: los beans los construye <code>RegistryConfig</code>, no la prueba. Es la única que ejercita el <code>RegistryController</code>, el mapeo del JSON y el <code>@RestControllerAdvice</code>.',
+    blind:'Casi nada queda fuera, y ese es el costo: cuando falla dice «esperaba VALID, llegó 500», sin señalar la línea. Y se verifica contra sí misma: si usted cambia el contrato y actualiza la aserción, sigue verde.',
+    file:'src/test/.../delivery/rest/RegistryControllerIT.java'
+  },
+  pact:{
+    nodes:st(N,[R,R,R,R,R,F,R,F]),
+    edges:st(E,[R,R,F,R,R,F,R,F]),
+    in:['RegistraduriaProviderPactIT','src/test &middot; Pact'],
+    count:'la app completa &middot; guiada por un archivo que escribió otro equipo',
+    cap:'El proveedor levanta la aplicación real y reproduce, una por una, las interacciones que declaró el consumidor en el pacto.',
+    narr:'Se ejecuta <b>el sistema completo, pero el guion viene de afuera</b>: el archivo de pacto lo generó <code>certificados</code>, no esta prueba. Cada <code>@State</code> monta el estado que el consumidor pidió por su nombre.',
+    blind:'Los defectos internos. El pacto solo dice qué espera el consumidor por HTTP: no sabe si el SQL está bien escrito ni si la transacción confirma.',
+    file:'src/test/.../delivery/rest/RegistraduriaProviderPactIT.java'
+  }
+};
+function drawScope(mode){
+  const s=SCOPE[mode];
+  for(const id in s.nodes) $('#'+id).dataset.state=s.nodes[id];
+  for(const id in s.edges){
+    $('#'+id).dataset.state=s.edges[id];
+    const base=id.replace('e-','l-');
+    const l1=$('#'+base), l2=$('#'+base+'2');
+    if(l1) l1.dataset.state=s.edges[id];
+    if(l2) l2.dataset.state=s.edges[id];
+  }
+  $('#n-in-t').textContent=s.in[0];
+  $('#n-in-s').innerHTML=s.in[1];
+  $('#scopeCount').innerHTML=s.count;
+  $('#scopeCap').innerHTML=s.cap;
+  $('#scopeNarr').innerHTML=s.narr;
+  $('#scopeBlind').innerHTML=s.blind;
+  $('#scopeFile').textContent=s.file;
+}
+seg($('#scopeSeg'),'mode',drawScope);
+drawScope('mock');
+
+/* ============================================================
+   02 - banco de pruebas
+   ============================================================ */
+const GUARDS=[
+  {src:'if (p == null)                    return INVALID;',      hit:p=>p===null, res:'INVALID'},
+  {src:'if (p.getId() <= 0)               return INVALID;',      hit:p=>p.id<=0,  res:'INVALID'},
+  {src:'if (!p.isAlive())                 return DEAD;',         hit:p=>!p.alive, res:'DEAD'},
+  {src:'if (p.getAge() < 0 ||',                                  hit:p=>p.age<0||p.age>120, res:'INVALID_AGE',
+   src2:'    p.getAge() > MAX_AGE)        return INVALID_AGE;'},
+  {src:'if (p.getAge() < MIN_AGE)         return UNDERAGE;',     hit:p=>p.age<18, res:'UNDERAGE'}
+];
+const L_EXISTS='if (repo.existsById(p.getId()))   return DUPLICATED;';
+const L_SAVE='repo.save(p.getId(), p.getName(), p.getAge(), p.isAlive());';
+const L_VALID='return VALID;';
+const TONE={VALID:'ok',DUPLICATED:'bad',INVALID:'bad',INVALID_AGE:'bad',UNDERAGE:'warn',DEAD:'neutral'};
+
+const bench={mode:'h2',db:[],runs:0,stub:false};
+
+const PRESETS=[
+  {t:'Ana, 30 años, viva',       p:{name:'Ana',id:100,age:30,gender:'FEMALE',alive:true}},
+  {t:'Misma cédula (duplicada)', p:{name:'AnaDos',id:100,age:40,gender:'FEMALE',alive:true}},
+  {t:'Cédula 0 (inválida)',      p:{name:'Juan',id:0,age:25,gender:'MALE',alive:true}},
+  {t:'Luisa, 17 años',           p:{name:'Luisa',id:101,age:17,gender:'FEMALE',alive:true}},
+  {t:'Edad imposible (-1)',      p:{name:'Marta',id:104,age:-1,gender:'FEMALE',alive:true}},
+  {t:'Edad imposible (130)',     p:{name:'Elias',id:105,age:130,gender:'MALE',alive:true}},
+  {t:'Pedro, fallecido',         p:{name:'Pedro',id:102,age:45,gender:'MALE',alive:false}},
+  {t:'Menor y fallecida',        p:{name:'Sara',id:103,age:15,gender:'FEMALE',alive:false}},
+  {t:'p == null',                p:null}
+];
+
+function readForm(){
+  return {name:$('#fName').value,id:parseInt($('#fId').value,10)||0,age:parseInt($('#fAge').value,10)||0,
+          gender:$('#fGender').value,alive:$('#fAlive').value==='true'};
+}
+function writeForm(p){
+  if(!p) return;
+  $('#fName').value=p.name; $('#fId').value=p.id; $('#fAge').value=p.age;
+  $('#fGender').value=p.gender; $('#fAlive').value=String(p.alive);
+}
+
+function narrate(res,p,mode){
+  if(res==='INVALID'&&p===null)
+    return 'La ejecución corta en la <b>primera línea</b>. Ni el puerto ni la base de datos se tocan: es un caso que no necesita H2 para nada.';
+  if(res==='INVALID')
+    return 'El id no pasa la validación de dominio. <b>El repositorio nunca se invoca</b>, así que este caso vale lo mismo probado con mock que con H2 &mdash; use el barato.';
+  if(res==='INVALID_AGE')
+    return 'Edad fuera del rango biológico, así que <b>no es UNDERAGE</b>: es un dato imposible. A un menor de edad se le dice que espere; a este registro, que lo corrijan. Son dos clases de equivalencia distintas y necesitan dos pruebas.';
+  if(res==='DEAD'&&p.age<18)
+    return 'Tiene 15 años <i>y</i> está fallecida, pero el resultado es <b>DEAD</b>: la guarda de <code>alive</code> está escrita antes que las dos de edad y hace cortocircuito. El orden importa y hay que probarlo.';
+  if(res==='DEAD')
+    return 'Regla de dominio pura. Se resuelve antes de llegar al puerto, como los casos de edad.';
+  if(res==='UNDERAGE')
+    return 'Regla de dominio pura: se decide sin consultar nada. Una prueba de integración para este caso está pagando una base de datos que no usa.';
+  if(res==='DUPLICATED'&&mode==='h2')
+    return 'El <code>SELECT</code> encontró la fila que dejó el registro anterior. <b>Esto solo se puede afirmar con persistencia real</b>: la unicidad la garantiza la base, no el caso de uso.';
+  if(res==='DUPLICATED')
+    return 'El mock respondió <code>true</code> <b>sin ejecutar una sola sentencia SQL</b>. La prueba es instantánea, pero no verifica que <code>existsById</code> esté bien escrito.';
+  if(mode==='h2')
+    return 'Hubo <code>INSERT</code> y <code>commit</code>. La aserción honesta es volver a consultar la base con <code>repo.existsById(...)</code>, no solo comparar el enum devuelto.';
+  return 'Con el mock, <code>save(...)</code> se invocó pero <b>no guardó nada</b>. Solo puede afirmar la interacción con <code>verify(...)</code>, nunca el dato.';
+}
+
+function testSnippet(res,p,mode){
+  const L=[];
+  if(p===null){
+    L.push('// Act');
+    L.push('RegisterResult r = registry.registerVoter(null);');
+    L.push('// Assert');
+    L.push('assertEquals(RegisterResult.INVALID, r);');
+    return L.join('\n');
+  }
+  L.push('// Arrange');
+  if(mode==='mock'&&res==='DUPLICATED') L.push('when(repo.existsById('+p.id+')).thenReturn(true);');
+  L.push('Person p = new Person("'+p.name+'", '+p.id+', '+p.age+', Gender.'+p.gender+', '+p.alive+');');
+  L.push('// Act');
+  L.push('RegisterResult r = registry.registerVoter(p);');
+  L.push('// Assert');
+  L.push('assertEquals(RegisterResult.'+res+', r);');
+  if(mode==='h2'){
+    if(res==='VALID') L.push('assertTrue(repo.existsById('+p.id+'));');
+    else if(res!=='DUPLICATED') L.push('assertFalse(repo.existsById('+p.id+'));');
+  }else{
+    if(res==='VALID') L.push('verify(repo).save('+p.id+', "'+p.name+'", '+p.age+', '+p.alive+');');
+    else L.push('verify(repo, never()).save(anyInt(), anyString(), anyInt(), anyBoolean());');
+  }
+  return L.join('\n');
+}
+
+function runCase(p){
+  const mode=bench.mode, trace=[], log=[];
+  let res=null, done=false, fresh=null;
+  GUARDS.forEach(g=>{
+    const cls=done?'skip':(g.hit(p)?'hit':'pass');
+    trace.push({src:g.src,cls:cls});
+    if(g.src2) trace.push({src:g.src2,cls:cls});
+    if(!done&&cls==='hit'){res=g.res;done=true;}
+  });
+  if(!done){
+    let exists;
+    if(mode==='h2'){
+      exists=bench.db.some(r=>r.id===p.id);
+      log.push({q:'SELECT 1 FROM registry WHERE id = '+p.id,r:exists?'1 fila':'sin filas'});
+    }else{
+      exists=bench.stub;
+      log.push({q:'repo.existsById('+p.id+')',r:exists+'  (respuesta programada)'});
+    }
+    if(exists){
+      trace.push({src:L_EXISTS,cls:'hit'}); res='DUPLICATED';
+      trace.push({src:L_SAVE,cls:'skip'}); trace.push({src:L_VALID,cls:'skip'});
+      if(mode==='mock') log.push({q:'repo.save(...)',r:'NO invocado  →  verify(never()) pasa'});
+    }else{
+      trace.push({src:L_EXISTS,cls:'pass'});
+      trace.push({src:L_SAVE,cls:'run'});
+      trace.push({src:L_VALID,cls:'run'});
+      res='VALID';
+      if(mode==='h2'){
+        log.push({q:"INSERT INTO registry(id, name, age, is_alive) VALUES("+p.id+", '"+p.name+"', "+p.age+", "+p.alive+")",r:'1 fila  +  commit'});
+        bench.db.push({id:p.id,name:p.name,age:p.age,alive:p.alive});
+        fresh=p.id;
+      }else{
+        log.push({q:'repo.save('+p.id+', "'+p.name+'", '+p.age+', '+p.alive+')',r:'invocado  →  verify(...) pasa'});
+      }
+    }
+  }else{
+    trace.push({src:L_EXISTS,cls:'skip'});
+    trace.push({src:L_SAVE,cls:'skip'});
+    trace.push({src:L_VALID,cls:'skip'});
+  }
+  bench.runs++;
+  paintBench(trace,res,p,log,fresh);
+}
+
+function paintBench(trace,res,p,log,fresh){
+  $('#benchTrace').innerHTML=trace.map(t=>'<div class="'+t.cls+'">'+esc(t.src)+'</div>').join('');
+  const tone=TONE[res];
+  $('#benchResult').className='result '+tone;
+  $('#benchResult').innerHTML='<b>'+res+'</b><span class="pill '+tone+'">RegisterResult</span>';
+  $('#benchNarr').innerHTML=narrate(res,p,bench.mode);
+  $('#benchTest').textContent=testSnippet(res,p,bench.mode);
+  $('#benchLog').innerHTML=log.map(l=>'<div>'+esc(l.q)+'<br><span class="r">→ '+esc(l.r)+'</span></div>').join('');
+  paintStore(fresh);
+  $('#benchCount').textContent=bench.runs+' ejecución'+(bench.runs===1?'':'es')+
+    (bench.mode==='h2'?' · '+bench.db.length+' fila'+(bench.db.length===1?'':'s')+' en la tabla':' · sin base de datos');
+}
+
+function paintStore(fresh){
+  const box=$('#benchStore');
+  if(bench.mode==='mock'){
+    $('#benchStoreTitle').textContent='Interacciones con el doble';
+    box.innerHTML='<p class="empty">No hay tabla: <code>RegistryRepositoryPort</code> está reemplazado por un mock.<br>Lo único observable son las llamadas que recibió.</p>';
+    return;
+  }
+  $('#benchStoreTitle').textContent='Tabla registry en H2';
+  if(!bench.db.length){ box.innerHTML='<p class="empty">Tabla vacía &mdash; equivale a <code>repo.deleteAll()</code> en el @Before.</p>'; return; }
+  box.innerHTML='<table class="tbl"><thead><tr><th>id</th><th>name</th><th>age</th><th>is_alive</th></tr></thead><tbody>'+
+    bench.db.map(r=>'<tr class="'+(r.id===fresh?'fresh':'')+'"><td>'+r.id+'</td><td>'+esc(r.name)+'</td><td>'+r.age+'</td><td>'+r.alive+'</td></tr>').join('')+
+    '</tbody></table>';
+}
+
+$('#benchChips').innerHTML=PRESETS.map((x,i)=>'<button class="chip" data-i="'+i+'">'+x.t+'</button>').join('');
+$$('#benchChips .chip').forEach(b=>b.addEventListener('click',()=>{
+  const pr=PRESETS[+b.dataset.i];
+  writeForm(pr.p);
+  runCase(pr.p);
+}));
+$('#benchRun').addEventListener('click',()=>runCase(readForm()));
+$('#benchClear').addEventListener('click',()=>{ bench.db=[]; paintStore(null); $('#benchCount').textContent='tabla vaciada'; });
+$('#stubExists').addEventListener('change',e=>{bench.stub=e.target.checked;});
+seg($('#benchSeg'),'mode',m=>{
+  bench.mode=m;
+  $('#stubWrap').hidden=(m!=='mock');
+  $('#benchClear').hidden=(m==='mock');
+  runCase(readForm());
+});
+runCase(PRESETS[0].p);
+
+/* ============================================================
+   03 - secuencias
+   ============================================================ */
+const FLOWS={
+  h2:{
+    actors:[['RegistryIT','@Before + @Test'],['Registry','usecase'],['RegistryRepository','JDBC'],['H2','regdb_usecase_it']],
+    cap:'Prueba de integración: la aserción final vuelve a bajar hasta la base de datos.',
+    code:['@Before public void setup() throws Exception {',
+          '  RegistryRepository repository =',
+          '      new RegistryRepository(JDBC_URL);   // base propia',
+          '  repository.initSchema();',
+          '  repository.deleteAll();',
+          '  registry = new Registry(repo = repository);',
+          '}',
+          '',
+          '@Test public void shouldRegisterValidPerson() throws Exception {',
+          '  Person p1 = new Person("Ana", 100, 30, Gender.FEMALE, true);',
+          '  RegisterResult result = registry.registerVoter(p1);',
+          '  assertEquals(RegisterResult.VALID, result);',
+          '  assertTrue(repo.existsById(100));',
+          '}'],
+    steps:[
+      {f:0,t:2,l:'initSchema() + deleteAll()',line:4,n:'El <b>Arrange</b> ya toca la base: crea la tabla y la deja vacía. Además usa un nombre de base propio (<code>regdb_usecase_it</code>) para no heredar lo que dejó otra clase de prueba.'},
+      {f:0,t:1,l:'registerVoter(Ana, 100)',line:10,n:'<b>Act.</b> La prueba llama al caso de uso real, con el repositorio real inyectado por constructor.'},
+      {f:1,t:2,l:'existsById(100)',line:10,n:'<code>Registry</code> no sabe que del otro lado hay JDBC: llama al puerto. Esa indirección es la que después permite meter un mock.'},
+      {f:2,t:3,l:'SELECT 1 FROM registry WHERE id = 100',line:10,n:'<b>Aquí es donde el mock no llega.</b> Este SQL se ejecuta de verdad; si la consulta estuviera mal escrita, se vería ahora.'},
+      {f:3,t:2,l:'sin filas',r:1,line:10,n:'H2 responde vacío. El repositorio traduce eso a <code>false</code>.'},
+      {f:2,t:1,l:'false',r:1,line:10,n:'No hay duplicado, así que la ejecución continúa hacia el guardado.'},
+      {f:1,t:2,l:'save(100, "Ana", 30, true)',line:10,n:'El caso de uso ordena persistir. Todavía no hay nada en la tabla.'},
+      {f:2,t:3,l:'INSERT ... + commit',line:10,n:'El repositorio abre transacción, inserta y confirma. Si faltara el <code>commit</code>, el paso siguiente seguiría diciendo VALID.'},
+      {f:1,t:0,l:'VALID',r:1,line:11,n:'Primera aserción: el enum devuelto. <b>Esta sola no prueba que se haya guardado nada.</b>'},
+      {f:0,t:2,l:'repo.existsById(100)',line:12,n:'<b>La aserción que sí importa.</b> La prueba vuelve a consultar el repositorio para confirmar que el dato quedó.'},
+      {f:2,t:3,l:'SELECT 1 ... → 1 fila',line:12,n:'La fila está. <code>assertTrue</code> pasa y ahora sí se puede afirmar que la integración entre capas funciona.'}
+    ]
+  },
+  mock:{
+    actors:[['RegistryWithMockTest','@Before + @Test'],['Registry','usecase'],['mock(Port)','Mockito']],
+    cap:'Con un doble no hay SQL ni transacciones: la prueba afirma sobre interacciones, no sobre datos.',
+    code:['@Before public void setUp() {',
+          '  repo = mock(RegistryRepositoryPort.class);',
+          '  registry = new Registry(repo);',
+          '}',
+          '',
+          '@Test public void shouldReturnDuplicatedWhenRepoSaysExists() throws Exception {',
+          '  when(repo.existsById(7)).thenReturn(true);',
+          '  Person p = new Person("Ana", 7, 25, Gender.FEMALE, true);',
+          '  RegisterResult result = registry.registerVoter(p);',
+          '  assertEquals(RegisterResult.DUPLICATED, result);',
+          '  verify(repo, never()).save(anyInt(), anyString(), anyInt(), anyBoolean());',
+          '}'],
+    steps:[
+      {f:0,t:2,l:'mock(RegistryRepositoryPort.class)',line:1,n:'Mockito fabrica al vuelo un objeto que implementa la interfaz. Todos sus métodos devuelven valores neutros hasta que usted diga otra cosa.'},
+      {f:0,t:2,l:'when(existsById(7)).thenReturn(true)',line:6,n:'<b>Aquí se decide el resultado de la prueba.</b> No hay base de datos: usted está afirmando «suponga que el 7 ya existe».'},
+      {f:0,t:1,l:'registerVoter(Ana, 7)',line:8,n:'<b>Act.</b> El caso de uso es el mismo código de producción del laboratorio anterior; lo único distinto es qué hay detrás del puerto.'},
+      {f:1,t:2,l:'existsById(7)',line:8,n:'La llamada sale igual que con H2. <code>Registry</code> no puede distinguir el mock del repositorio real.'},
+      {f:2,t:1,l:'true  (sin SQL)',r:1,line:8,n:'Respuesta inmediata desde el guion. <b>Cero sentencias SQL, cero conexiones, microsegundos.</b>'},
+      {f:1,t:0,l:'DUPLICATED',r:1,line:9,n:'La regla de dominio se ejecutó de verdad; lo simulado fue únicamente el dato que venía de afuera.'},
+      {f:0,t:2,l:'verify(never()).save(...)',line:10,n:'<b>La aserción es sobre la conversación</b>, no sobre la tabla: se comprueba que el caso de uso no intentó guardar. Es lo único observable cuando no hay persistencia.'}
+    ]
+  },
+  http:{
+    actors:[['RegistryControllerIT','TestRestTemplate'],['RegistryController','delivery/rest'],['Registry','usecase'],['RegistryRepository','JDBC'],['H2','regdb_ctrl_it']],
+    cap:'Prueba de sistema: la prueba solo conoce una URL, un JSON y una respuesta.',
+    code:['@RunWith(SpringRunner.class)',
+          '@SpringBootTest(webEnvironment = RANDOM_PORT)',
+          '@TestPropertySource(properties =',
+          '    "registry.jdbc-url=jdbc:h2:mem:regdb_ctrl_it;DB_CLOSE_DELAY=-1")',
+          'public class RegistryControllerIT {',
+          '  @Autowired private TestRestTemplate rest;',
+          '',
+          '  @Test public void shouldRegisterValidPerson() {',
+          '    ResponseEntity&lt;String&gt; resp = register(json);',
+          '    assertEquals(HttpStatus.OK, resp.getStatusCode());',
+          '    assertEquals("VALID", resp.getBody());',
+          '  }',
+          '}'],
+    steps:[
+      {f:0,t:0,l:'@SpringBootTest levanta la app',line:1,n:'Antes del primer assert se construye el contexto completo: <code>RegistryConfig</code> crea el repositorio y el caso de uso. <b>La prueba ya no arma los objetos a mano.</b>'},
+      {f:0,t:0,l:'registry.jdbc-url propia',line:3,n:'La prueba fija su propia URL de base. Sin eso compartiría la base con las demás pruebas, porque H2 con <code>DB_CLOSE_DELAY=-1</code> sobrevive mientras viva la JVM &mdash; y las JVM se reutilizan entre clases.'},
+      {f:0,t:1,l:'POST /register  {json}',line:8,n:'La prueba entra por el mismo puerto TCP que usaría cualquier cliente. Caja negra: desde aquí no se ve ninguna clase interna.'},
+      {f:1,t:1,l:'PersonDTO → Person (Gender.valueOf)',line:8,n:'<b>Este mapeo solo existe en el controller.</b> Ninguna otra prueba pasa por acá: si <code>gender</code> llega fuera del enum, revienta justo en esta línea y el <code>@RestControllerAdvice</code> lo convierte en 400.'},
+      {f:1,t:2,l:'registerVoter(p)',line:8,n:'Recién ahora empieza lo que el laboratorio mostró con H2. Todo lo anterior era infraestructura de entrega.'},
+      {f:2,t:3,l:'existsById(100)',line:8,n:'La misma cadena de siempre, esta vez con los beans que armó Spring y no la prueba.'},
+      {f:3,t:4,l:'SELECT 1 ... → sin filas',line:8,n:'Base limpia y propia de esta clase de prueba.'},
+      {f:2,t:3,l:'save(...) → INSERT + commit',line:8,n:'Persistencia real dentro de una petición HTTP real. Es lo más parecido a producción que hay en el taller.'},
+      {f:2,t:1,l:'VALID',r:1,line:8,n:'El enum vuelve al controller, que lo convierte en texto plano con <code>r.name()</code>.'},
+      {f:1,t:0,l:'200 OK  &middot;  body "VALID"',r:1,line:9,n:'La respuesta cruza la red. <b>Todo lo que la prueba puede afirmar cabe en estas dos líneas</b>: el código de estado y el cuerpo.'},
+      {f:0,t:0,l:'assertEquals("VALID", resp.getBody())',line:10,n:'Si esto falla, sabe que el sistema está mal &mdash; pero no en qué capa. Y si usted cambia el contrato y actualiza esta línea, la prueba sigue verde: por eso hace falta el pacto.'}
+    ]
+  },
+  pact:{
+    actors:[['Prueba consumidor','certificados'],['CertificadoService','el cliente HTTP'],['Servidor simulado','Pact'],['el pacto','JSON'],['Proveedor IT','registraduria']],
+    cap:'Dos fases separadas en el tiempo: el consumidor declara, el proveedor verifica. Los dos servicios nunca se levantan juntos.',
+    code:['// FASE 1 — mvn test (Surefire)',
+          '@Pact(consumer = "certificados", provider = "registraduria")',
+          'RequestResponsePact votanteValido(PactDslWithProvider builder) {',
+          '  return builder',
+          '    .given("no hay ningún votante registrado con id 900")',
+          '    .uponReceiving("un registro de votante válido")',
+          '    .path("/register").method("POST")',
+          '    .willRespondWith().status(200).body("VALID").toPact();',
+          '}',
+          '',
+          '// FASE 2 — mvn verify (Failsafe)',
+          '@State("ya existe un votante registrado con id 901")',
+          'void conVotante901() {',
+          '  registry.registerVoter(new Person("Luis", 901, 40, MALE, true));',
+          '}'],
+    steps:[
+      {f:0,t:2,l:'declara la interacción esperada',line:5,n:'<b>Fase 1, con Surefire.</b> El consumidor declara qué le va a pedir a la Registraduría y qué respuesta espera. Todavía no existe ninguna Registraduría en esta prueba.'},
+      {f:1,t:2,l:'POST /register',line:6,n:'El código real del consumidor (<code>CertificadoService</code>) hace la petición contra un servidor simulado que se comporta según lo declarado.'},
+      {f:2,t:1,l:'200  body "VALID"',r:1,line:7,n:'El simulado responde exactamente lo pactado. El consumidor emite el certificado y su prueba pasa.'},
+      {f:0,t:3,l:'escribe target/pacts/*.json',line:7,n:'<b>El pacto es un subproducto.</b> No se escribe a mano: sale de haber corrido las pruebas del consumidor.'},
+      {f:3,t:4,l:'lee el pacto',line:11,n:'<b>Fase 2, con Failsafe.</b> Ahora el proveedor toma ese archivo. Aquí el consumidor ya no participa: pudo haberlo generado otro equipo, en otro repositorio, la semana pasada.'},
+      {f:4,t:4,l:'@State monta el estado pedido',line:12,n:'El consumidor <b>nombró</b> el estado que necesitaba; el proveedor sabe <b>cómo</b> montarlo. El consumidor no sabe que hay una tabla, y no debe saberlo.'},
+      {f:4,t:4,l:'reproduce cada interacción',line:11,n:'El proveedor levanta la aplicación real y repite las peticiones del pacto contra ella.'},
+      {f:4,t:3,l:'¿la respuesta coincide?',line:11,n:'Si usted cambió <code>r.name()</code> por un JSON, aquí falla &mdash; aunque su propia prueba de sistema siga en verde. <b>Ese es el fallo que sin Pact habría llegado a producción.</b>'}
+    ]
+  }
+};
+const sq={flow:'h2',cur:0};
+function drawSeq(){
+  const F=FLOWS[sq.flow], svg=$('#seqSvg'), n=F.actors.length;
+  const W=880, m=8, colW=(W-2*m)/n, y0=86, dy=44;
+  const H=y0+F.steps.length*dy+16;
+  svg.setAttribute('viewBox','0 0 '+W+' '+H);
+  svg.setAttribute('aria-label','Diagrama de secuencia: '+F.cap);
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  const defs=el('defs');
+  [['sq-real','var(--real)'],['sq-mut','var(--fuera)']].forEach(function(p){
+    const mk=el('marker',{id:p[0],viewBox:'0 0 10 8',refX:'9',refY:'4',markerWidth:'7',markerHeight:'6',orient:'auto-start-reverse'});
+    mk.appendChild(el('polygon',{points:'0,0 10,4 0,8',fill:p[1]}));
+    defs.appendChild(mk);
+  });
+  svg.appendChild(defs);
+  const xs=[];
+  F.actors.forEach((a,i)=>{
+    const cx=m+colW*i+colW/2; xs.push(cx);
+    svg.appendChild(el('rect',{x:cx-colW/2+7,y:10,width:colW-14,height:44,rx:3,
+      fill:'var(--sunk)',stroke:'var(--line-2)','stroke-width':1.4}));
+    svg.appendChild(el('text',{x:cx,y:30,'text-anchor':'middle','font-family':'var(--fd)','font-size':12.5,
+      'font-weight':600,fill:'var(--ink)'},a[0]));
+    svg.appendChild(el('text',{x:cx,y:45,'text-anchor':'middle','font-family':'var(--fm)','font-size':10,
+      fill:'var(--muted)'},a[1]));
+    svg.appendChild(el('line',{x1:cx,y1:56,x2:cx,y2:H-8,stroke:'var(--line-2)','stroke-width':1.2,'stroke-dasharray':'3 4'}));
+  });
+  F.steps.forEach((s,i)=>{
+    if(i>sq.cur) return;
+    const on=(i===sq.cur), y=y0+i*dy;
+    const col=on?'var(--real)':'var(--fuera)', mk=on?'url(#sq-real)':'url(#sq-mut)';
+    const op=on?1:.45, sw=on?2.2:1.5;
+    const lbl=s.l.replace(/&middot;/g,'·');
+    if(s.f===s.t){
+      const x=xs[s.f];
+      svg.appendChild(el('path',{d:'M '+x+','+(y-9)+' l 26,0 l 0,18 l -26,0',fill:'none',stroke:col,
+        'stroke-width':sw,'marker-end':mk,opacity:op,'stroke-dasharray':s.r?'6 3':'none'}));
+      svg.appendChild(el('text',{x:x+34,y:y-2,'font-family':'var(--fm)','font-size':11,
+        fill:on?'var(--ink)':'var(--muted)',opacity:op},lbl));
+    }else{
+      const x1=xs[s.f], x2=xs[s.t], dir=x2>x1?-1:1;
+      svg.appendChild(el('line',{x1:x1-dir*4,y1:y,x2:x2+dir*7,y2:y,stroke:col,'stroke-width':sw,
+        'marker-end':mk,opacity:op,'stroke-dasharray':s.r?'6 3':'none'}));
+      svg.appendChild(el('text',{x:(x1+x2)/2,y:y-8,'text-anchor':'middle','font-family':'var(--fm)','font-size':11,
+        fill:on?'var(--ink)':'var(--muted)',opacity:op},lbl));
+    }
+  });
+  const st=F.steps[sq.cur];
+  $('#seqNarr').innerHTML=st.n;
+  $('#seqCap').innerHTML=F.cap;
+  $('#seqCode').innerHTML=F.code.map((c,i)=>'<span class="'+(i===st.line?'hi':'')+'">'+(c===''?'&nbsp;':c)+'</span>').join('');
+  $('#seqCount').textContent='paso '+(sq.cur+1)+' de '+F.steps.length;
+  $('#seqPrev').disabled=(sq.cur===0);
+  $('#seqNext').disabled=(sq.cur===F.steps.length-1);
+}
+$('#seqNext').addEventListener('click',()=>{if(sq.cur<FLOWS[sq.flow].steps.length-1){sq.cur++;drawSeq();}});
+$('#seqPrev').addEventListener('click',()=>{if(sq.cur>0){sq.cur--;drawSeq();}});
+$('#seqReset').addEventListener('click',()=>{sq.cur=0;drawSeq();});
+seg($('#seqSeg'),'flow',f=>{sq.flow=f;sq.cur=0;drawSeq();});
+drawSeq();
+
+/* ============================================================
+   04 - H2 no es PostgreSQL
+   ============================================================ */
+const SQLS=[
+  {b:'CREATE TABLE',
+   s:'CREATE TABLE registry(name VARCHAR(100), id INT);',
+   h2:['ok','tabla creada','El identificador va sin comillas, así que H2 lo pliega a mayúsculas: la columna se llama NAME.'],
+   pg:['ok','tabla creada','Sin comillas, PostgreSQL pliega a minúsculas: la columna se llama name.'],
+   cols:['H2  →  NAME','PostgreSQL  →  name'],
+   n:'La misma sentencia crea <b>columnas con nombres distintos</b> en cada motor. Todavía no se nota, y por eso el defecto sobrevive hasta la consulta.'},
+  {b:'SELECT name',
+   s:'SELECT name FROM registry;',
+   h2:['ok','1 fila, valor = Ana','name sin comillas → NAME, que es como se llama la columna.'],
+   pg:['ok','1 fila, valor = Ana','name sin comillas → name, que es como se llama la columna.'],
+   cols:['H2  →  NAME','PostgreSQL  →  name'],
+   n:'Sin comillas todo funciona en los dos, <b>porque el mismo plegado se aplica al crear y al consultar</b>. Es el caso que hace creer que el SQL es portable.'},
+  {b:'SELECT "name"',
+   s:'SELECT "name" FROM registry;',
+   h2:['err','FALLA: columna "name" no encontrada','Entre comillas el identificador se toma literal: name ≠ NAME.'],
+   pg:['ok','1 fila, valor = Ana','Entre comillas se toma literal: name = name.'],
+   cols:['H2  →  NAME','PostgreSQL  →  name'],
+   n:'<b>Aquí está la divergencia medida del taller.</b> El mismo SQL, el mismo esquema, y un motor responde y el otro falla. Ninguna prueba contra H2 puede avisarle de esto.'},
+  {b:'SELECT "NAME"',
+   s:'SELECT "NAME" FROM registry;',
+   h2:['ok','1 fila, valor = Ana','Literal NAME = NAME, que es como quedó la columna.'],
+   pg:['err','FALLA: la columna «NAME» no existe','Literal NAME ≠ name.'],
+   cols:['H2  →  NAME','PostgreSQL  →  name'],
+   n:'El caso simétrico: entrecomillar «arreglándolo» para H2 <b>rompe PostgreSQL</b>. No hay una forma entrecomillada que funcione en los dos.'}
+];
+let sqlCur=0;
+$('#sqlSeg').innerHTML=SQLS.map((x,i)=>'<button data-i="'+i+'"'+(i===0?' class="on"':'')+'>'+x.b+'</button>').join('');
+function paintSql(i){
+  sqlCur=+i;
+  const x=SQLS[sqlCur];
+  $('#sqlStmt').textContent=x.s;
+  [['#engH2','h2'],['#engPg','pg']].forEach(function(p){
+    const box=$(p[0]), d=x[p[1]];
+    box.className='engine '+(d[0]==='ok'?'ok':'err');
+    $('.out',box).innerHTML='<span class="res">'+esc(d[1])+'</span><span class="why">'+esc(d[2])+'</span>';
+  });
+  $('#sqlNarr').innerHTML=x.n;
+  $('#sqlCols').innerHTML=x.cols.join('<br>');
+  $('#sqlCount').textContent='sentencia '+(sqlCur+1)+' de '+SQLS.length;
+}
+seg($('#sqlSeg'),'i',paintSql);
+paintSql(0);
+
+/* ============================================================
+   05 - matriz defecto / prueba
+   ============================================================ */
+const V={si:['Lo atrapa','ok'],no:['No lo ve','bad'],parcial:['Depende','warn']};
+const COLS=['mock','h2','pg','http','pact'];
+const COLNAMES={mock:'Unitaria con mock',h2:'Integración con H2',pg:'Testcontainers',http:'Sistema por HTTP',pact:'Contrato con Pact'};
+const DEFECTS=[
+  {t:'Las guardas de edad quedan en el orden equivocado',
+   w:'Registry.registerVoter — UNDERAGE antes que INVALID_AGE',
+   v:{mock:['si','Es lógica de dominio pura: una edad de -1 devuelve <code>UNDERAGE</code> en vez de <code>INVALID_AGE</code>. La prueba más barata ya lo atrapa.'],
+      h2:['si','También lo atrapa, pero levantando una base de datos que este caso ni siquiera consulta.'],
+      pg:['si','Lo atrapa y además arranca un contenedor. Es el ejemplo perfecto de prueba cara para un defecto barato.'],
+      http:['si','Lo atrapa por la respuesta del endpoint, con el ciclo más lento de los cinco.'],
+      pact:['no','El pacto solo fija la forma de la conversación, no las reglas de negocio detrás.']}},
+  {t:'existsById consulta por la columna equivocada',
+   w:'RegistryRepository — SELECT 1 FROM registry WHERE name = ?',
+   v:{mock:['no','El mock reemplaza exactamente ese método: devuelve lo que usted programó con <code>when(...)</code>. El SQL roto no se ejecuta ni una vez.'],
+      h2:['si','El <code>SELECT</code> corre de verdad: la segunda persona con el mismo id entra como <code>VALID</code> y el <code>assertEquals(DUPLICATED, ...)</code> falla señalando la clase.'],
+      pg:['si','Igual que H2, contra el motor real.'],
+      http:['si','El segundo <code>POST</code> responde <code>VALID</code> donde debía responder <code>DUPLICATED</code>. Ve el síntoma, no la línea.'],
+      pact:['no','A menos que el pacto declare justamente esa interacción duplicada, que es exactamente lo que pide una de las actividades.']}},
+  {t:'save() hace rollback y nunca confirma la transacción',
+   w:'RegistryRepository.save — falta el commit',
+   v:{mock:['no','<code>verify(repo).save(...)</code> sigue pasando: la interacción ocurrió. Que el dato se pierda después es invisible para un doble.'],
+      h2:['parcial','<code>assertEquals(VALID, r)</code> pasa igual. Solo lo atrapa la aserción que vuelve a consultar: <code>assertTrue(repo.existsById(100))</code>. Por eso el taller insiste en ella.'],
+      pg:['parcial','Lo mismo, con el añadido de que el comportamiento transaccional de PostgreSQL no es idéntico al de H2.'],
+      http:['parcial','El primer <code>POST</code> responde <code>VALID</code>. El defecto solo asoma en el segundo <code>POST</code> del mismo id, que debería dar <code>DUPLICATED</code>.'],
+      pact:['no','El pacto verifica respuestas, no efectos persistentes.']}},
+  {t:'Un identificador SQL que cada motor pliega distinto',
+   w:'SELECT "name" — H2 lo busca como name, la columna es NAME',
+   v:{mock:['no','No toca la base de datos en absoluto.'],
+      h2:['no','Para H2 el código está mal escrito o bien escrito según su propio plegado: no puede compararse con otro motor.'],
+      pg:['si','<b>Es la razón de existir de esta prueba.</b> Mismo código, motor real, y la diferencia aparece.'],
+      http:['no','Corre sobre H2, así que hereda su punto ciego.'],
+      pact:['no','No mira SQL.']}},
+  {t:'Un género fuera del enum responde 500 en vez de 400',
+   w:'RegistryController — sin el @RestControllerAdvice',
+   v:{mock:['no','El mapeo <code>PersonDTO → Person</code> vive en el controller. Una prueba que llama a <code>registerVoter</code> ya recibe el objeto de dominio armado.'],
+      h2:['no','Mismo motivo: entra por debajo de la capa de entrega.'],
+      pg:['no','Igual que H2.'],
+      http:['si','Es la única que envía JSON de verdad. <code>shouldReturnBadRequestWhenGenderIsNotValid</code> existe exactamente para esto.'],
+      pact:['no','Salvo que el consumidor declare esa interacción de error en el pacto.']}},
+  {t:'La respuesta pasa de texto plano a JSON',
+   w:'RegistryController — return {"resultado":"VALID"}',
+   v:{mock:['no','El mock responde lo que usted le dijo, no lo que responde el servicio real.'],
+      h2:['no','No pasa por HTTP.'],
+      pg:['no','Tampoco pasa por HTTP.'],
+      http:['no','<b>El punto ciego más peligroso.</b> Verifica al proveedor contra sí mismo: si usted actualiza la aserción junto con el código, sigue verde.'],
+      pact:['si','El consumidor sigue esperando texto plano, así que la verificación del pacto falla. Es el único aviso antes de producción.']}}
+];
+function paintMx(sel){
+  $('#mxBody').innerHTML=DEFECTS.map((d,i)=>{
+    const c=k=>'<td><span class="pill '+V[d.v[k][0]][1]+'">'+V[d.v[k][0]][0]+'</span></td>';
+    return '<tr data-i="'+i+'" class="'+(i===sel?'sel':'')+'"><td>'+d.t+'<span class="w">'+esc(d.w)+'</span></td>'+
+      COLS.map(c).join('')+'</tr>';
+  }).join('');
+  $$('#mxBody tr').forEach(tr=>tr.addEventListener('click',()=>paintMx(+tr.dataset.i)));
+  const d=DEFECTS[sel];
+  $('#mxDetail').innerHTML=COLS.map(k=>
+    '<div class="verdict"><h6>'+COLNAMES[k]+'</h6><span class="pill '+V[d.v[k][0]][1]+'">'+V[d.v[k][0]][0]+
+    '</span><p>'+d.v[k][1]+'</p></div>').join('');
+}
+paintMx(0);
+
+/* ============================================================
+   06 - maven
+   ============================================================ */
+const MVN={
+  test:{on:['validate','compile','test'],
+    files:{mockTest:1,pactConsumer:1,registryIT:0,postgresIT:0,controllerIT:0,providerIT:0},
+    narr:'Surefire ejecuta los archivos que casan con <code>*Test.java</code> y el build se detiene en la fase <code>test</code>. <b>Ninguna prueba de integración se ejecuta</b>: el resultado es <code>BUILD SUCCESS</code> sin haber probado ni la persistencia ni el sistema. El pacto sí se genera aquí, pero nadie lo verifica todavía.',
+    code:['&lt;!-- Surefire, por convención --&gt;','&lt;includes&gt;','  **/*Test.java','  **/Test*.java','  **/*Tests.java','&lt;/includes&gt;','','validate → compile → test']},
+  verify:{on:['validate','compile','test','package','integration-test','verify'],
+    files:{mockTest:1,pactConsumer:1,registryIT:1,postgresIT:1,controllerIT:1,providerIT:1},
+    narr:'Failsafe entra en <code>integration-test</code> y ejecuta los <code>*IT.java</code>: H2, Testcontainers, el sistema por HTTP y la verificación del pacto. JaCoCo emite sus dos reportes. <b>Este es el comando que el taller pide</b> para la rama principal: <code>mvn clean verify</code>.',
+    code:['&lt;artifactId&gt;maven-failsafe-plugin&lt;/artifactId&gt;','&lt;includes&gt;','  &lt;include&gt;**/*IT.java&lt;/include&gt;','&lt;/includes&gt;','','JaCoCo, cuatro ejecuciones:','  prepare-agent          → test','  report                 → test','  prepare-agent-integration','  report-integration     → verify','','target/site/jacoco/index.html','target/site/jacoco-it/index.html']}
+};
+const MVNFILES=[
+  {k:'mockTest',n:'RegistryWithMockTest.java',p:'*Test.java → Surefire',r:'unitaria con doble'},
+  {k:'pactConsumer',n:'CertificadoServicePactTest.java',p:'*Test.java → Surefire',r:'genera el pacto'},
+  {k:'registryIT',n:'RegistryIT.java',p:'*IT.java → Failsafe',r:'integración con H2'},
+  {k:'postgresIT',n:'RegistryRepositoryPostgresIT.java',p:'*IT.java → Failsafe',r:'Testcontainers'},
+  {k:'controllerIT',n:'RegistryControllerIT.java',p:'*IT.java → Failsafe',r:'sistema por HTTP'},
+  {k:'providerIT',n:'RegistraduriaProviderPactIT.java',p:'*IT.java → Failsafe',r:'verifica el pacto'}
+];
+const ALLPHASES=['validate','compile','test','package','integration-test','verify'];
+function paintMvn(cmd){
+  const M=MVN[cmd];
+  $('#mvnPhases').innerHTML=ALLPHASES.map((p,i)=>
+    '<span class="phase '+(M.on.indexOf(p)>=0?'on':'')+'">'+p+'</span>'+
+    (i<ALLPHASES.length-1?'<span class="arw">›</span>':'')).join('');
+  $('#mvnFiles').innerHTML=MVNFILES.map(f=>{
+    const on=M.files[f.k]===1;
+    return '<div class="file '+(on?'on':'off')+'"><span class="fn">'+f.n+'</span>'+
+      '<span class="fp">'+f.p+'</span>'+
+      '<span class="pill '+(on?'ok':'fuera')+'">'+(on?'se ejecuta':'no corre')+'</span></div>';
+  }).join('');
+  $('#mvnNarr').innerHTML=M.narr;
+  $('#mvnCode').innerHTML=M.code.map(c=>'<span>'+(c===''?'&nbsp;':c)+'</span>').join('');
+  const n=Object.keys(M.files).filter(k=>M.files[k]===1).length;
+  $('#mvnCount').textContent=n+' de 6 clases de prueba';
+}
+seg($('#mvnSeg'),'cmd',paintMvn);
+paintMvn('test');
+</script>
+</body>
+</html>
