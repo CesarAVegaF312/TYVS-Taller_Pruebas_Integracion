@@ -1,0 +1,27 @@
+# PostgreSQL para explorar a mano, con la misma imagen, base, usuario y clave
+# que usa RegistryRepositoryPostgresIT.
+#
+#   docker compose up -d --wait
+#   docker compose exec postgres psql -U tyvs -d registraduria
+#   docker compose down -v               # -v borra los datos: vuelve a cero
+#
+# NO lo usan las pruebas: Testcontainers crea su propio contenedor efimero en
+# cada ejecucion, que es justamente lo que lo hace reproducible. Este es para
+# experimentar (por ejemplo, la divergencia H2/PostgreSQL de la seccion
+# "Una divergencia real, medida").
+name: tyvs-integracion
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: registraduria
+      POSTGRES_USER: tyvs
+      POSTGRES_PASSWORD: tyvs
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tyvs -d registraduria"]
+      interval: 2s
+      timeout: 3s
+      retries: 30

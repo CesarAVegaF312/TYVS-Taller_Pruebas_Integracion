@@ -14,6 +14,7 @@ Comprender, diseñar e implementar **pruebas de integración y de sistema** sobr
 ## Índice
 
 - [Complemento visual interactivo](#complemento-visual-interactivo)
+- [Ambiente de trabajo reproducible](#ambiente-de-trabajo-reproducible)
 - [PRUEBAS DE INTEGRACIÓN BÁSICAS](#pruebas-de-integración-básicas)
 - [Prueba de Integración con BD H2](#prueba-de-integración-con-bd-h2)
 - [Dobles de prueba para aislar el caso de uso](#dobles-de-prueba-para-aislar-el-caso-de-uso)
@@ -168,6 +169,35 @@ Agregamos dependencias y plugins clave al `pom.xml`.
 - `h2`: BD embebida que se crea en memoria → rápida, aislada, sin instalación.
 
 > **Nunca excluya `junit-vintage-engine`.** Es un error frecuente: parece razonable "quitar JUnit 5 si uso JUnit 4", pero vintage es justamente lo que ejecuta sus pruebas JUnit 4. Si lo excluye, **las pruebas dejan de correr en silencio**: `mvn test` termina con `BUILD SUCCESS` y `Tests run: 0`. Es uno de los falsos verdes más difíciles de detectar, porque nada falla — simplemente no se prueba nada.
+
+---
+
+## Ambiente de trabajo reproducible
+
+El repositorio trae su **ambiente definido como código** en [`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json): Java 17, Maven y un Docker propio dentro del contenedor, en las mismas versiones para todo el curso. Es **opcional**: si ya tiene todo instalado, siga con la puesta en marcha de siempre.
+
+- **GitHub Codespaces**, sin instalar nada: en la página del repositorio, *Code → Codespaces → Create codespace*. Se abre VS Code en el navegador. Consume la cuota gratuita de Codespaces: deténgalo al terminar.
+- **VS Code y Docker** en su equipo: instale la extensión *Dev Containers*, abra la carpeta del repositorio y elija *Reopen in Container*.
+
+Al crearse, el ambiente compila el proyecto una vez para descargar las dependencias. Después `mvn verify` funciona igual que en su equipo.
+
+> **Por qué importa.** "En mi máquina funciona" casi siempre es una diferencia de ambiente: otra versión de Java, de Maven, del navegador o del sistema operativo. Un ambiente versionado junto al código elimina esa variable. El workflow [`ambiente.yml`](.github/workflows/ambiente.yml) lo comprueba: construye el contenedor y corre la suite dentro de él.
+
+### Con este ambiente, Testcontainers sí se ejecuta
+
+Sin Docker, `RegistryRepositoryPostgresIT` se **omite** y el build sigue en verde. Es cómodo, pero engañoso: la suite "pasa" sin haber corrido sus pruebas más fieles. Revise siempre la línea `Tests run: ..., Skipped: ...` de Failsafe. Dentro del devcontainer hay Docker, y esas pruebas corren de verdad contra PostgreSQL.
+
+### PostgreSQL para explorar a mano
+
+[`docker-compose.yml`](docker-compose.yml) levanta el **mismo** PostgreSQL 16 que usa la prueba (misma imagen, base, usuario y clave). Sirve para reproducir a mano la divergencia de la sección [Una divergencia real, medida](#una-divergencia-real-medida):
+
+```bash
+docker compose up -d --wait
+docker compose exec postgres psql -U tyvs -d registraduria
+docker compose down -v      # -v borra los datos: la próxima vez arranca vacío
+```
+
+No reemplaza a Testcontainers. La prueba crea su propio contenedor **efímero** en cada ejecución, y por eso es reproducible. Este contenedor es para experimentar, y lo que quede en él no debe influir en ninguna prueba.
 
 ---
 
