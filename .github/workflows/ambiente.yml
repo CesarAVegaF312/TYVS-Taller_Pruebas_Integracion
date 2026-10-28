@@ -21,9 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # La CLI oficial de devcontainers, con la salida guardada: si algo falla,
-      # las ultimas lineas se publican como anotaciones del check, visibles en
-      # el PR sin abrir el log completo.
+      # La CLI oficial de devcontainers, con version fija y la salida guardada:
+      # si algo falla, las lineas de error se publican como anotaciones del
+      # check, visibles en el PR sin abrir el log completo.
       - name: Construir el devcontainer
         run: |
           set -o pipefail
