@@ -797,6 +797,8 @@ Puedes consultarla en el siguiente enlace: [**Taller de Integración Continua en
 
 ## PARA ENTREGAR CON ESTE TALLER
 
+> **Ejercicio y proyecto.** Lo que pide esta sección es el **ejercicio** de la unidad 4 y se entrega sobre la Registraduría. Las mismas técnicas (H2, dobles de prueba, pruebas de sistema, Testcontainers, Pact) se aplican después al **caso de su equipo** en el [Proyecto de Pruebas de Integración](https://github.com/CesarAVegaF312/TYVS-Proyecto_Pruebas_Integracion): persistencia con la unicidad de la ficha, API REST, servicio externo y pipeline de CI. Ver el [catálogo de casos](https://github.com/CesarAVegaF312/TYVS-Proyecto_Pruebas_Unitarias/blob/master/casos/README.md).
+
 ### 1) Repositorio
 
 - **Repositorio Git** con el proyecto completo y **URL pública o acceso por invitación**.
