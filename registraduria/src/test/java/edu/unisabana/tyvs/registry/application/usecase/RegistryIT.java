@@ -6,11 +6,11 @@ import edu.unisabana.tyvs.registry.domain.model.Person;
 import edu.unisabana.tyvs.registry.domain.model.RegisterResult;
 import edu.unisabana.tyvs.registry.infrastructure.persistence.RegistryRepository;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * PRUEBA DE INTEGRACION: el caso de uso {@link Registry} contra una base de
@@ -22,7 +22,7 @@ import static org.junit.Assert.assertTrue;
  * "mvn verify"). Esta clase toca una base de datos, asi que no es unitaria.
  * Compare con {@link RegistryWithMockTest}, que prueba la misma clase sin BD.
  *
- * Cada prueba usa su propia base (regdb_usecase_it) y limpia en el @Before:
+ * Cada prueba usa su propia base (regdb_usecase_it) y limpia en el @BeforeEach:
  * H2 con DB_CLOSE_DELAY=-1 sobrevive mientras viva la JVM, y las JVM se
  * reutilizan entre clases de prueba.
  */
@@ -33,7 +33,7 @@ public class RegistryIT {
     private RegistryRepositoryPort repo;
     private Registry registry;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         RegistryRepository repository = new RegistryRepository(JDBC_URL);
         repository.initSchema(); // Arrange: crear tabla

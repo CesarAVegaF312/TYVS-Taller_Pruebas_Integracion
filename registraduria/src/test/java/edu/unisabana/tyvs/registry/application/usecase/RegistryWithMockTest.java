@@ -4,10 +4,10 @@ import edu.unisabana.tyvs.registry.application.port.out.RegistryRepositoryPort;
 import edu.unisabana.tyvs.registry.domain.model.Gender;
 import edu.unisabana.tyvs.registry.domain.model.Person;
 import edu.unisabana.tyvs.registry.domain.model.RegisterResult;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -40,7 +40,7 @@ public class RegistryWithMockTest {
      * <p>Se crea un mock de {@link RegistryRepositoryPort} usando Mockito
      * y se inyecta en la instancia de {@link Registry}.</p>
      */
-    @Before
+    @BeforeEach
     public void setUp() {
         repo = mock(RegistryRepositoryPort.class);
         registry = new Registry(repo);

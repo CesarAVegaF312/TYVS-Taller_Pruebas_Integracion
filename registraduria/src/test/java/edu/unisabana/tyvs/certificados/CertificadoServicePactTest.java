@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * Nunca hace falta levantar los dos servicios a la vez.
  */
 @ExtendWith(PactConsumerTestExt.class)
-@PactTestFor(providerName = "registraduria", port = "0", pactVersion = PactSpecVersion.V3)
+@PactTestFor(providerName = "registraduria", pactVersion = PactSpecVersion.V3)
 @DisplayName("Contrato: certificados -> registraduria")
 class CertificadoServicePactTest {
 
