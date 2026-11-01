@@ -1,0 +1,156 @@
+{
+  "info": {
+    "_postman_id": "92a9a3be-623f-4935-9afa-8142f633e211",
+    "name": "TYVS - Registraduria (Pruebas de Integracion)",
+    "description": "Pruebas de API de caja negra sobre POST /register. Se ejecutan en Postman o, sin interfaz grafica, con Newman (ver el README, seccion 'Pruebas de API con Postman y Newman').\n\nLas peticiones de 'Ejemplos' estan resueltas. La carpeta 'EJERCICIO' lista los casos que faltan: completarlos es parte de la actividad.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Un documento distinto en cada ejecucion: si el servicio sigue arriba entre",
+          "// corridas, el mismo id daria DUPLICATED donde se espera VALID.",
+          "if (!pm.collectionVariables.get('idUnico')) {",
+          "    pm.collectionVariables.set('idUnico', String(100000 + Math.floor(Math.random() * 900000)));",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "idUnico",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Ejemplos",
+      "item": [
+        {
+          "name": "01 - Persona valida queda inscrita",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('el resultado es VALID', () => pm.expect(pm.response.text()).to.eql('VALID'));",
+                  "pm.test('responde en menos de 1 s', () => pm.expect(pm.response.responseTime).to.be.below(1000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "description": "Camino feliz: mayor de edad, viva, documento valido. Se espera 200 y VALID.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ana\",\n  \"id\": {{idUnico}},\n  \"age\": 30,\n  \"gender\": \"FEMALE\",\n  \"alive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "register"
+              ]
+            }
+          }
+        },
+        {
+          "name": "02 - El mismo documento por segunda vez es DUPLICATED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('el resultado es DUPLICATED', () => pm.expect(pm.response.text()).to.eql('DUPLICATED'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "description": "Reutiliza el documento de la peticion 01: la regla de duplicados se verifica contra lo persistido, no en memoria del cliente. Depende del orden: corre despues de la 01.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ana\",\n  \"id\": {{idUnico}},\n  \"age\": 30,\n  \"gender\": \"FEMALE\",\n  \"alive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "register"
+              ]
+            }
+          }
+        },
+        {
+          "name": "03 - Un genero inexistente se rechaza con 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 400, no 500', () => pm.response.to.have.status(400));",
+                  "pm.test('el cuerpo es INVALID_INPUT', () => pm.expect(pm.response.text()).to.eql('INVALID_INPUT'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "description": "Prueba negativa: el contrato de errores. Un valor que no existe en el enumerado Gender no debe producir un 500, sino un 400 con INVALID_INPUT.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Luis\",\n  \"id\": 777001,\n  \"age\": 40,\n  \"gender\": \"OTRO\",\n  \"alive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "register"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "EJERCICIO",
+      "description": "Agregue aqui una peticion por caso, con sus pruebas (pm.test) de codigo HTTP y de cuerpo:\n\n- UNDERAGE (menor de edad)\n- INVALID_AGE (edad imposible)\n- DEAD (persona fallecida)\n- INVALID (documento invalido)\n- Una prueba negativa mas: JSON incompleto o con un tipo incorrecto\n\nCuide los valores limite: no basta con un representativo por clase.",
+      "item": []
+    }
+  ]
+}
