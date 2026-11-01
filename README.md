@@ -102,47 +102,48 @@ src/test/java/edu/unisabana/tyvs/registry/
 Agregamos dependencias y plugins clave al `pom.xml`.
 
 ```xml
+  <!-- Versión de Spring Boot: gestiona las versiones de todas las dependencias
+       de abajo (por eso casi ninguna declara <version>). -->
+  <properties>
+    <spring-boot.version>4.1.2</spring-boot.version>
+  </properties>
+
   <dependencies>
-    <!-- Motor vintage: ejecuta pruebas JUnit 4 sobre la plataforma JUnit 5.
-         ES OBLIGATORIO mientras existan pruebas con @Before / org.junit.Assert. -->
-    <dependency>
-      <groupId>org.junit.vintage</groupId>
-      <artifactId>junit-vintage-engine</artifactId>
-      <version>5.10.2</version>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- JUnit 4: anotaciones y aserciones clásicas -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.13.2</version>
-      <scope>test</scope>
-    </dependency>
-
     <!-- Mockito para crear dobles de prueba -->
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>5.12.0</version>
       <scope>test</scope>
     </dependency>
 
-    <!-- Web + JSON -->
+    <!-- Web MVC + JSON. Desde Spring Boot 4 se llama spring-boot-starter-webmvc
+         (antes, spring-boot-starter-web). -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-web</artifactId>
+      <artifactId>spring-boot-starter-webmvc</artifactId>
     </dependency>
 
-    <!-- Trae JUnit 5, AssertJ, Hamcrest, Mockito y el soporte de test de Spring -->
+    <!-- Trae JUnit Jupiter, AssertJ, Hamcrest, Mockito y el soporte de test de Spring -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
 
-    <!-- Validación de @RequestBody con @Valid.
-         Desde Spring Boot 2.3 ya NO viene incluida en spring-boot-starter-web. -->
+    <!-- TestRestTemplate para las pruebas de sistema por HTTP. Desde Spring Boot 4
+         vive en su propio módulo (y necesita RestTemplateBuilder, del segundo). -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-resttestclient</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-restclient</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Validación de @RequestBody con @Valid: no viene incluida en el starter web. -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-validation</artifactId>
@@ -153,7 +154,6 @@ Agregamos dependencias y plugins clave al `pom.xml`.
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
-      <version>2.2.224</version>
       <scope>runtime</scope>
     </dependency>
 
@@ -162,13 +162,13 @@ Agregamos dependencias y plugins clave al `pom.xml`.
 
 **Explicación:**
 
-- `junit-vintage-engine`: es el **motor que permite ejecutar pruebas JUnit 4 sobre la plataforma JUnit 5**. No es "JUnit 5" ni una alternativa a JUnit 4: es el puente entre ambos.
-- `junit` 4.13.2: las anotaciones y aserciones que usan las pruebas de este taller (`@Before`, `org.junit.Assert`).
-- `spring-boot-starter-test`: trae JUnit 5 (Jupiter), AssertJ, Hamcrest, Mockito y el soporte de Spring. **Desde Spring Boot 2.4 ya no incluye vintage**, y por eso lo declaramos aparte.
+- `spring-boot.version` (4.1.2): el pom importa el *BOM* de Spring Boot (`spring-boot-dependencies`), que fija versiones compatibles entre sí para todas las librerías. Por eso las dependencias no declaran `<version>`: declararla a mano es la forma más común de terminar con dos librerías que no se entienden.
+- `spring-boot-starter-test`: trae **JUnit Jupiter**, AssertJ, Hamcrest, Mockito y el soporte de Spring. Todas las pruebas del taller son JUnit Jupiter (`@Test` y `@BeforeEach` de `org.junit.jupiter.api`).
+- `spring-boot-resttestclient` y `spring-boot-restclient`: `TestRestTemplate`, para las pruebas de sistema. En Spring Boot 4 salió del starter de test a su propio módulo.
 - `mockito-core`: crea dobles de prueba, ideal cuando no quieres depender de IO real.
 - `h2`: BD embebida que se crea en memoria → rápida, aislada, sin instalación.
 
-> **Nunca excluya `junit-vintage-engine`.** Es un error frecuente: parece razonable "quitar JUnit 5 si uso JUnit 4", pero vintage es justamente lo que ejecuta sus pruebas JUnit 4. Si lo excluye, **las pruebas dejan de correr en silencio**: `mvn test` termina con `BUILD SUCCESS` y `Tests run: 0`. Es uno de los falsos verdes más difíciles de detectar, porque nada falla — simplemente no se prueba nada.
+> **¿Y JUnit 4?** Versiones anteriores de este taller usaban JUnit 4 (`@Before`, `org.junit.Assert`) y necesitaban el motor *vintage* para ejecutarlo. JUnit 6 marca ese motor como obsoleto y Spring 7 hace lo mismo con `SpringRunner`, así que las pruebas se migraron a JUnit Jupiter. Si encuentra código JUnit 4 en un proyecto real, la lección sigue vigente: **sin el motor que corresponde, las pruebas dejan de correr en silencio**. `mvn test` termina con `BUILD SUCCESS` y `Tests run: 0`. Es uno de los falsos verdes más difíciles de detectar, porque nada falla: simplemente no se prueba nada. Revise siempre esa línea.
 
 ---
 
@@ -227,10 +227,10 @@ import edu.unisabana.tyvs.registry.domain.model.Person;
 import edu.unisabana.tyvs.registry.domain.model.RegisterResult;
 import edu.unisabana.tyvs.registry.infrastructure.persistence.RegistryRepository;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Pruebas de integración para el caso de uso {@link Registry}, aplicando el formato AAA:
@@ -253,7 +253,7 @@ public class RegistryIT {
      *   <li>Construye el caso de uso inyectando el repositorio.</li>
      * </ul>
      */
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         String jdbc = "jdbc:h2:mem:regdb;DB_CLOSE_DELAY=-1";
         repo = new RegistryRepository(jdbc);
@@ -313,7 +313,7 @@ public class RegistryIT {
 
 #### Explicación paso a paso
 
-1. **@Before → setup()** — anotación de JUnit 4, que es la que usa esta clase (en JUnit 5 el equivalente es `@BeforeEach`).
+1. **@BeforeEach → setup()** — se ejecuta antes de **cada** prueba, así cada una arranca con datos limpios (en JUnit 4 se llamaba `@Before`).
    - Configura una BD H2 en memoria (`jdbc:h2:mem:regdb;DB_CLOSE_DELAY=-1`).
    - Llama a `repo.initSchema()` para crear la tabla de votantes.
    - Crea un objeto `Registry` que usará ese `repo` real.
@@ -375,10 +375,10 @@ import edu.unisabana.tyvs.registry.application.port.out.RegistryRepositoryPort;
 import edu.unisabana.tyvs.registry.domain.model.Gender;
 import edu.unisabana.tyvs.registry.domain.model.Person;
 import edu.unisabana.tyvs.registry.domain.model.RegisterResult;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -411,7 +411,7 @@ public class RegistryWithMockTest {
      * <p>Se crea un mock de {@link RegistryRepositoryPort} usando Mockito
      * y se inyecta en la instancia de {@link Registry}.</p>
      */
-    @Before
+    @BeforeEach
     public void setUp() {
         repo = mock(RegistryRepositoryPort.class);
         registry = new Registry(repo);
@@ -501,14 +501,12 @@ Conclusión para el taller: **el mismo SQL no es portable**. Es exactamente el t
 ```xml
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>postgresql</artifactId>
-      <version>1.19.8</version>
+      <artifactId>testcontainers-postgresql</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <version>1.19.8</version>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -527,8 +525,8 @@ Conclusión para el taller: **el mismo SQL no es portable**. Es exactamente el t
 class RegistryRepositoryPostgresIT {
 
     @Container
-    private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:16-alpine")
+    private static final PostgreSQLContainer POSTGRES =
+            new PostgreSQLContainer("postgres:16-alpine")
                     .withDatabaseName("registraduria")
                     .withUsername("tyvs")
                     .withPassword("tyvs");
@@ -693,18 +691,18 @@ Archivo: `src/test/java/edu/unisabana/tyvs/registry/delivery/rest/RegistryContro
 // src/test/java/edu/unisabana/tyvs/registry/delivery/rest/RegistryControllerIT.java
 package edu.unisabana.tyvs.registry.delivery.rest;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+// Desde Spring Boot 4, TestRestTemplate no se configura solo: hay que pedirlo.
+@AutoConfigureTestRestTemplate
 // Base de datos propia: H2 con DB_CLOSE_DELAY=-1 vive mientras viva la JVM, y
 // Surefire/Failsafe reutilizan la JVM entre clases. Sin un nombre distinto, un
 // id insertado aquí reaparecería en otra prueba.
