@@ -16,3 +16,6 @@ registraduria/target/
 .vscode/
 *.iml
 target/
+
+# Resultados de Newman (pruebas de API): se regeneran en cada ejecucion.
+newman/

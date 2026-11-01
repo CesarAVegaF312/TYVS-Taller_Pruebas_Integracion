@@ -740,7 +740,7 @@ public class RegistryControllerIT {
 #### Actividades con Sistemas
 
 1. Realiza pruebas con distintos cuerpos JSON que produzcan los estados `VALID`, `DUPLICATED`, `UNDERAGE`, `INVALID_AGE`, `DEAD`.
-2. Usa Postman o curl para verificar los endpoints `/register` y documenta tus observaciones.
+2. Completa la carpeta **EJERCICIO** de la colección de Postman (ver [Pruebas de API con Postman y Newman](#pruebas-de-api-con-postman-y-newman)) y documenta tus observaciones.
 3. Implementa una prueba negativa (JSON incompleto o tipo incorrecto).
 
 #### Reto adicional con Sistemas
@@ -748,6 +748,31 @@ public class RegistryControllerIT {
 Agrega validaciones con `@Valid` en el `PersonDTO` y prueba que el sistema devuelva errores HTTP adecuados (`400`, `409`, `422`).
 
 ---
+
+#### Pruebas de API con Postman y Newman
+
+Las pruebas de sistema anteriores están escritas en Java y viven dentro del proyecto. Hay otra forma de probar la misma API, muy común en equipos de QA: una **colección de Postman**, que cualquiera puede abrir, leer y ejecutar sin conocer el código.
+
+La colección está en [`postman/registraduria.postman_collection.json`](postman/registraduria.postman_collection.json), con el ambiente [`postman/local.postman_environment.json`](postman/local.postman_environment.json) (`baseUrl = http://localhost:8080`). Tiene dos carpetas:
+
+- **Ejemplos**, resueltos: una persona válida (`VALID`), el mismo documento por segunda vez (`DUPLICATED`) y un género inexistente, que debe responder `400 INVALID_INPUT` y no un `500`.
+- **EJERCICIO**, vacía: los casos que faltan, con sus valores límite.
+
+Cada petición lleva sus aserciones (`pm.test`) sobre el código HTTP y el cuerpo. Una petición sin aserciones solo demuestra que el servidor respondió algo.
+
+**En Postman:** *Import* → los dos archivos → elija el ambiente `local` → *Run collection*.
+
+**Sin interfaz gráfica, con Newman** (el ejecutor de línea de comandos de Postman; requiere Node):
+
+```bash
+cd registraduria && mvn -DskipTests package && java -jar target/registraduria-1.0-SNAPSHOT.jar
+# en otra terminal, desde la raíz del repositorio:
+npx newman@6.2.1 run postman/registraduria.postman_collection.json -e postman/local.postman_environment.json
+```
+
+Newman es lo que permite llevar la colección al pipeline: el workflow [`api.yml`](.github/workflows/api.yml) levanta el servicio y la ejecuta en cada *push* y *pull request*.
+
+> **Dos detalles de diseño de la colección.** El documento de la petición 01 se genera al azar en cada ejecución: con un número fijo, la segunda corrida contra el mismo servicio daría `DUPLICATED` donde se espera `VALID`. Y la petición 02 **depende del orden**, porque reutiliza el documento de la 01. Es una dependencia deliberada y está escrita en su descripción. Una dependencia de orden sin documentar es una de las causas de pruebas inestables que estudia el módulo 4 del taller de Economía de las Pruebas.
 
 ### Ejecución de las pruebas
 
